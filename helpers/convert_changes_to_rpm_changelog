@@ -1,0 +1,221 @@
+#!/usr/bin/perl
+
+BEGIN {
+$abuild_lib_dir = "/usr/lib/build";
+unshift @INC, "$abuild_lib_dir";
+}
+
+use Date::Parse;
+use Time::Zone;
+use Time::localtime;
+use Time::Local;
+
+my %entries = ();
+my @entries_org = ();
+my %entries_head = ();
+my $rpm_birth = 852159600;
+my $rpm_birth_str = "Thu Jan 02 1997";
+my $actual = 999999999999;
+my %month_to_num = (Jan=>0,Feb=>1,Mar=>2,Apr=>3,May=>4,Jun=>5,Jul=>6,Aug=>7,Sep=>8,Oct=>9,Nov=>10,Dec=>11);
+# handle first line in entry specially
+my $firstline = 0;
+my $do_check = 0;
+my $do_changes = 0;
+
+my $addminus = "";
+if (@ARGV) {
+    if ($ARGV[0] eq "--addminus") {
+	shift @ARGV;
+	$addminus = "- ";
+    }
+    if ($ARGV[0] eq "--check") {
+	shift @ARGV;
+	$do_check = 1;
+    }
+    if ($ARGV[0] eq "--changes") {
+	shift @ARGV;
+	$do_changes = 1;
+    }
+}
+
+while (<>) {
+  chomp ($_);
+  next if (/^--------------/);
+  next if (/^========================/);
+  if ( /^[A-Za-z]*\s*[A-Za-z]*\s*[0-9]*\s*[0-9][0-9]:[0-9][0-9].*-.*\@.*/ 
+  || /^[A-Za-z]*\s*[A-Za-z]*\s*[0-9]*\s*[0-9][0-9][0-9][0-9]\s*-.*\@.*/ ) {
+   #warn ("found changes style dateline $_\n");
+   if (/^Mon / || /^Tue / || /^Wed / || /^Thu / ||
+      /^Fri / || /^Sat / || /^Sun /) {
+    my $line_copy = $_;
+    my @xline = split ( '-', $_);
+    my $datestr = shift ( @xline );
+    my $address = join ('-', @xline);
+
+    # --------------------------------------------------------------------------------
+    my $dt = $datestr;
+    $dt = lc($dt);
+    $dt =~ /([0-9][0-9][0-9][0-9])/;
+    my $year = $1;
+    if (!defined($zone) && $dt =~ /\s([a-z]{3,4})(dst)?\s[0-9]{4}/) {
+        my $dst = $2;
+        $zone = tz_offset($1);
+        $zone += 3600 if defined($zone) && $dst;
+    }
+    my $tdt = str2time($dt);
+    $dt =~ /([0-9]+)/;
+    my $day = $1;
+    if (!$tdt) {
+        if ($dt =~ /([a-z]{3})\s+([a-z]{3})/) {
+            $tdt = str2time("$1 $2 $day $year");
+        }
+    }
+    if (!$tdt) {
+        if ($dt =~ /([a-z]{3})/) {
+            $tdt = str2time("$1 $day $year");
+        }
+    }
+    if (!$tdt) {
+        $tdt = str2time("$year-1-1");
+    }
+    # 12:00 if not specified
+    $tdt += 12 * 3600 unless $dt =~ /\d:\d/;
+    $tdt += ($zone || 0);
+
+    $actual = $tdt;
+    # --------------------------------------------------------------------------------
+    $address =~ s/^\s*(.*)/$1/;
+    $address =~ s/\s+/ /g;
+    #$actual = `date +%s --date "$datestr" 2>/dev/null`;
+    if ( ! $actual ) {
+         print "INVALID DATESTR=\"$datestr\" !!!";
+         print "$actual Skipping rest...";
+         exit 1;
+    }
+    if ( $actual < $rpm_birth ) {
+      $datestr = $rpm_birth_str;
+    } else {
+      my @gm = gmtime $actual;
+      $datestr = sprintf("%s %s %02d %4d",
+	(qw(Sun Mon Tue Wed Thu Fri Sat Sun))[$gm[6]],
+	(qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec))[$gm[4]],
+	$gm[3],$gm[5]+1900);
+    }
+    chomp ($datestr);
+    unless ($entries{$actual}) {
+	push @entries_org, $actual;
+	$entries_head{$actual} = "$line_copy";
+    }
+    $outstr = "$datestr $addminus$address";
+    if ($do_changes) {
+      $entries{$actual} .= $line_copy."\n\n";
+    } else {
+      if ( $entries{$actual} !~ /$outstr/ ) {
+	$entries{$actual} .= "* $outstr\n";
+      }
+    }
+    $firstline = 1;
+    next;
+   } else {
+    warn ("$_ is not in english locale\n");
+    $actual = timelocal ( 0,0,0,1,0,100); # Jan 1st 2000
+    $entries{$actual} .= "* Tue Jan 01 2000 ${addminus}nobody\@suse.de\n" unless ( $entries{$actual} =~ /$outstr/ );
+   }
+  }
+  if (/^\* Mon / || /^\* Tue / || /^\* Wed / || /^\* Thu / ||
+      /^\* Fri / || /^\* Sat / || /^\* Sun /) {
+    my ($datestr,$address);
+#    if ( /-/ ) {
+#	($datestr,$address) = split ( '-', $_);
+#    } else {
+        my @tmp_a = split ( /\s+/, $_);
+        my @tmp_b = ();
+        while (my $token = shift @tmp_a) {
+		push @tmp_b, $token;
+		last if $token =~ /^[0-9][0-9][0-9][0-9]$/;
+	}
+        $datestr = join(' ',@tmp_b);
+        $address = join(' ',@tmp_a);
+	$address =~ s/^.*\<([^ ]*)\>.*$/$1/;
+#    }
+    #die ("still have mail address\n") if ($datestr =~ /\@/);
+    @datarray = split ( ' ',$datestr);
+    $actual = timelocal(0,0,0,$datarray[3],$month_to_num{$datarray[2]},
+	$datarray[$#datarray]-1900);
+    $address =~ s/^\s*(.*)/$1/;
+    $address =~ s/\s+/ /g;
+    if ( ! $actual ) {
+	print "INVALID DATESTR=\"$datestr\" !!!";
+	print "$actual Skipping rest...";
+	exit 1;
+    }
+    unless ($entries{$actual}) {
+	push @entries_org, "$actual";
+	$entries_head{$actual} = "$datestr - $address";
+    } elsif ($do_changes) {
+        $entries{$actual} .= "\n-------------------------------------------------------------------\n";
+    }
+    if ($do_changes) {
+        my @gm = gmtime ($actual+3600);
+        @gm = gmtime($actual+7200) if ($gm[2] == 23);
+        my $dstr = sprintf("%s %s %02d %02d:%02d:%02d CET %4d",
+        (qw(Sun Mon Tue Wed Thu Fri Sat Sun))[$gm[6]],
+        (qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec))[$gm[4]],
+        $gm[3],$gm[2],$gm[1],$gm[0],$gm[5]+1900);
+	$entries{$actual} .= "$dstr - $address\n\n";
+    } else {
+	$entries{$actual} .= "$_\n";
+    }
+    $firstline = 1;
+    next;
+  }
+  $_ =~ s/([^%])%([^%])/$1%%$2/g;
+  $_ =~ s/^(\s*)%%(\S*)/$1\[%%$2\]/;
+  if (/^-/ || /^\s*-/) {
+    $_ =~ s/^\s*(\S*)/$1/ if($firstline);
+    $_ =~ s/(\S*)\s*$/$1/;
+    $entries{$actual} .= "$_\n";
+    $firstline = 0;
+    next;
+  }
+  if (/^\s*\#/) {
+    # hash is comment, try to escape
+    s/^(\s*)(\#\d*)/$1\[$2\]/;
+  }
+  if (/\S/) {
+    $_ =~ s/^\s*(\S*)/$1/;
+    $_ =~ s/(\S*)\s*$/$1/;
+    $entries{$actual} .= "  $_\n";
+    $firstline = 0;
+  }
+}
+
+$first = "1";
+
+my @arr2 = sort {0+$b <=> 0+$a} keys %entries;
+for (;$a1 = pop @entries_org , $a2 = pop @arr2;) {
+    die ("changelog not in sequence:\n$entries_head{$a2}\n$entries{$a2}\n$entries_head{$a1}\n$entries{$a1}\n") if $a1 ne $a2 && $do_check;
+}
+
+if (!$do_changes) {
+foreach $key (sort {0+$b <=> 0+$a} (keys %entries)) {
+  if ( $first eq "1" && $entries{$key} !~ /^\*/ ) {
+    $dst = `date`;
+    chomp ($dst);
+    print "* $dst ${addminus}broken\@suse.de\n";
+  }
+  $first = "0";
+  print "$entries{$key}";
+}
+} else {
+foreach $key (sort {0+$b <=> 0+$a} (keys %entries)) {
+  print "-------------------------------------------------------------------\n";
+  if ( $first eq "1" && $entries{$key} !~ /^[FMSTW]/ ) {
+    $dst = `date`;
+    chomp ($dst);
+    print "$dst - broken\@suse.de\n\n";
+  }
+  $first = "0";
+  print "$entries{$key}\n";
+}
+}

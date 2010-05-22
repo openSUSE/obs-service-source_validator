@@ -1,0 +1,89 @@
+#!/usr/bin/perl -w
+
+my $filename = $ARGV[0];
+$filename =~ s/^.*\///g;
+my @PATCHES;
+my @APPLIED;
+my $errors = 0;
+
+while (<>) {
+   if (/^(#\s*)?[Pp]atch[0-9\s]*:/) {
+	my ($front,$back) = split(":",$_,2);
+	$front =~ s/^(#\s*)?[Pp]atch//;
+	$front =~ s/\s*$//;
+	$front = 0 unless $front;
+	$back =~ s/\s*$//;
+	$back =~ s/^\s*//;
+	$back =~ s/^.*\///g;
+	$PATCHES[$front] = $back;
+	next;
+    }
+   if (/^(#.*)?%[Pp]atch/) {
+	my $applied = (/^#/) ? 2 :1;
+	my @line = split (/\s+/,$_);
+	my $had_P = grep {/^-P/} @line;
+	while (my $arg = shift (@line)) {
+		if ($arg eq "-P") {
+			$arg = shift (@line);
+			if ($arg =~ /^[0-9]/) {
+				$APPLIED[$arg] = $applied;
+			} else {
+				print STDERR "(E) %patch -P without following numeric argument\n";
+				$errors++;
+			}
+		} elsif ($arg =~ /^-P/) {
+			$arg =~ s/^-P//;
+			if ($arg =~ /^[0-9]/) {
+				$APPLIED[$arg] = $applied;
+			} else {
+				print STDERR "(E) %patch -P without following numeric argument\n";
+				$errors++;
+			}
+		} elsif ($arg =~ /^(#.*)?%[Pp]atch$/) {
+			unless ($had_P) {
+				$arg = 0;
+				$APPLIED[$arg] = $applied;
+			}
+		} elsif ($arg =~ /^(#.*)?%[Pp]atch/) {
+			$arg =~ s/^(#.*)?%[Pp]atch//;
+			if ($arg =~ /^[0-9]/) {
+				$APPLIED[$arg] = $applied;
+			} else {
+				print STDERR "(E) %patchZZZ without following numeric argument\n";
+				$errors++;
+			}
+		}
+	}
+	next;
+   }
+   if (/%\{?(PATCH|Patch|patch|P:)[0-9]+\}?/) {
+	$_ =~ s/^.*%\{?(PATCH|Patch|patch|P:)//;
+	$_ =~ s/^([0-9]*).*$/$1/;
+	$APPLIED[$_] = 3 if (/[0-9]+/);
+   }
+}
+
+for my $i (1...$#PATCHES) {
+	next unless $PATCHES[$i];
+	next if $APPLIED[$i] && $APPLIED[$i] == 1;
+        if ($APPLIED[$i] && $APPLIED[$i] == 2) {
+		print STDERR "(W) $filename: patch $i $PATCHES[$i] is commented out\n";
+		next;
+	}
+        if ($APPLIED[$i] && $APPLIED[$i] == 3) {
+		print STDERR "(W) $filename: patch $i $PATCHES[$i]: mentioned in specfile but not applied via %patch\n";
+		next;
+	}
+	print STDERR "(E) $filename: patch $i $PATCHES[$i] apparently not applied (or not applied via %patch)\n";
+	$errors++;
+}
+for my $j (1...$#APPLIED) {
+	next unless $APPLIED[$j];
+	next if $APPLIED[$j];
+	next if $PATCHES[$j] == 2;
+	print STDERR "(E) $filename: patch number $j referenced but not defined\n";
+	$errors++;
+}
+
+exit ($errors > 0);
+

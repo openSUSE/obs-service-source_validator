@@ -1,0 +1,46 @@
+#!/bin/bash
+
+test "$1" = "--verbose" && { VERBOSE=true ; shift ; }
+test "$1" = "--batchmode" && { BATCHMODE=true ; shift ; }
+DIR_TO_CHECK=$1
+DESTINATIONDIR=$2
+test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
+test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+
+test "$VERBOSE" = true && echo -n "- checking forbidden paths in filelists "
+for SPECFILE in $DIR_TO_CHECK/*.spec ; do
+    test -f $SPECFILE || continue
+    test "$VERBOSE" = true && echo -n "."
+
+    IS_FILE_LIST=false
+    RETURN=0
+
+    if test -f "$SPECFILE" -a -s "$SPECFILE" ; then
+	SEDOUT=$(sed -ne "/^%file/,\${;p;}" $SPECFILE)
+        while read -r LINE ; do
+            case "$LINE" in
+              %file*)
+                IS_FILE_LIST=true
+              ;;
+              %if*|%el*|%end*|%attr*|%dir*|%conf*)
+              ;;
+              %doc*/*|/*)
+                test $IS_FILE_LIST = true && {
+                    case $LINE in
+                      */usr/man/*|*/usr/info/*|*/usr/include/X11/*|*/usr/bin/X11/*)
+                        RETURN=1
+                        echo `basename $SPECFILE` uses forbidden file path \"$LINE\".
+                      ;;
+                    esac
+                }
+              ;;
+              %*)
+                IS_FILE_LIST=false
+              ;;
+            esac
+        done < <(echo "$SEDOUT")
+    fi
+done
+test "$VERBOSE" = true && echo done
+
+exit $RETURN

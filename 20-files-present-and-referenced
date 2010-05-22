@@ -1,0 +1,293 @@
+#!/bin/bash
+
+test "$1" = "--verbose" && { VERBOSE=true ; shift ; }
+test "$1" = "--batchmode" && { BATCHMODE=true ; shift ; }
+DIR_TO_CHECK=$1
+DESTINATIONDIR=$2
+test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
+test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+
+
+
+RETURN=0
+RPMBUILD=rpm
+test -x /usr/bin/rpmbuild && RPMBUILD=rpmbuild
+
+#
+#  cleanup_and_exit
+#
+cleanup_and_exit () {
+    rm -rf $TMPDIR
+    exit $1
+}
+
+test "$VERBOSE" = true && echo -n "- checking if needed files are present and none stale "
+#
+# first make my TMPDIR
+#
+export TMPDIR=`mktemp -d -t check_if_valid_source_dir-XXXXXX 2>/dev/null || mktemp -d /var/tmp/check_if_valid_source_dir-XXXXXX`
+#
+# now create list of Sources.
+#
+MY_ARCH=`uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ -e s/arm.*/arm/ -e s/sa110/arm/`
+case $MY_ARCH in
+  i386)
+    MY_ARCH="%ix86"
+    ;;
+esac
+for i in $DIR_TO_CHECK/*.spec ; do
+        test -f $i || continue
+	sed	'/^#%([^)]*$/,/^[^(]*)/d
+		/^#[^%]/d
+		/^#%(.*)/d
+		/^%define/{
+			s@%(rpm -q.*)@1@
+		}
+		/^%define/{;p;d;}
+		/^%nil/{;p;d;}
+		/^%global.*%(.*)/d
+		/^%global/{;p;d;}
+		/^%include/d
+		/^%requires_eq/{;p;d;}
+		/^%requires_ge/{;p;d;}
+		/^%ifarch/{ 
+                        s@.*@%ifarch '$MY_ARCH'@
+                }
+		/^ExcludeArch:/d
+		/^%error/d
+		/^ExclusiveArch:/{
+			s@.*@ExclusiveArch: '$MY_ARCH'@
+		}
+		/^BuildArch.*:/{
+			s@.*@BuildArch: '$MY_ARCH'@
+		}
+		/^%if.*%{name}/{;p;d;}
+		/^%if[^a]/{ 
+                        s@.*@%if 1@
+                }
+		/^%if/{;p;d;}
+		/^%{\!/{;p;d;}
+		/^%{?/{;p;d;}
+		/^%{expand/d
+		/^%error/{;p;d;}
+		/^%else/{
+			s@.*@%endif\n%if 1@
+		}
+		/^%nil/{;p;d;}
+		/^%(.*)/{;d;}
+		/^%end/{;p;d;}
+		/^%bcond/{;p;d;}
+		/^%{py/{;p;d;}
+		/^%py_r/{;p;d;}
+		/^%/{;s/.*//;q;}
+		/^Requires:/d
+		/^No[Ss]ource/d
+		/^NoPatch/d
+		/^BuildPrereq/d
+		/^Build[Rr]equires/d
+		/^Pre[Rr]eq/d
+		/^Icon/d
+		/^Recommends/d
+		/^Supplements/d
+		/^Suggests/d
+		/^Enhances/d
+		s/^\([Ss]ource\|[Pp]atch\)[0-9]*:[ 	]*/%{echo:/
+		s/^Release:.*<RELEASE.*>/Release: 0/
+		/^%{echo:/s/$/ }/' $i >$TMPDIR/tmp.spec
+	grep -a ^Icon: $i|sed -n 's/^Icon:[ 	]*/%{echo:/
+		/^%{echo:/s/$/ }/p' >>$TMPDIR/tmp.spec
+	grep -a -q ^Release $i || {
+             sed -e "/^Version/{;p;s@\(.*\)@Release: 0\@;}" $TMPDIR/tmp.spec > $TMPDIR/tmp.spec.new
+	     mv $TMPDIR/tmp.spec.new $TMPDIR/tmp.spec
+	}
+	while test `grep -a "^%if" $TMPDIR/tmp.spec | wc -l` \
+		   -gt `grep -a "^%endif" $TMPDIR/tmp.spec | wc -l` ; do
+		echo "%endif" >> $TMPDIR/tmp.spec
+	done
+        echo "%description" >> $TMPDIR/tmp.spec
+
+	# hack for really strange specfiles with more than one Name: line	
+	sed -e "s@^Name:@XName:@" -e "0,/^XName:/{s@^XName:@Name:@}" -e "s@^XName:.*@@" $TMPDIR/tmp.spec > $TMPDIR/tmp.spec.2 && mv $TMPDIR/tmp.spec.2 $TMPDIR/tmp.spec
+
+	$RPMBUILD -bp $TMPDIR/tmp.spec 2>>$TMPDIR/sources || {
+	    $RPMBUILD -bp $TMPDIR/tmp.spec
+	    cleanup_and_exit 1
+	}
+done
+
+test -f $TMPDIR/sources || cleanup_and_exit
+
+#
+# check if all Sources, patches and the icon are present
+#
+touch $TMPDIR/sources.t
+grep -aq "command not found" $TMPDIR/sources && {
+    echo "$0 seems to have problems evaluating macros in specfile."
+    COMD=`grep -a "command not found" $TMPDIR/sources | head -n 1 | sed -e "s@.*: \([^:]*\): command not found@\1@"`
+    echo "command \"$COMD\" is not available used in the following defines:"
+    grep -a "%define.*$COMD" $DIR_TO_CHECK/*.spec
+    cleanup_and_exit 1
+}
+
+for i in `cat $TMPDIR/sources` ; do
+   echo "${i##*/}" >> $TMPDIR/sources.t
+done
+mv $TMPDIR/sources.t $TMPDIR/sources
+
+for HASTOBETHER in `cat $TMPDIR/sources` ; do
+    test -f $DIR_TO_CHECK/$HASTOBETHER || {
+	echo $HASTOBETHER mentioned in spec file does not exist.
+	RETURN=1
+    }
+done
+
+
+#
+# now check if everything is marked in spec files.
+#
+for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
+    BASE=${i##*/}
+    case $BASE in
+	\.|\.\.) continue ;;
+    esac
+    # files to display first
+    case $BASE in 
+	config-dist.sh | \
+	get_version_number.sh | \
+	get_release_number.sh | \
+	check-build.sh | \
+	baselibs.conf )
+	    if test -n "$DESTINATIONDIR" -a -f "$DESTINATIONDIR/$BASE" && cmp -s "$DIR_TO_CHECK/$BASE" "$DESTINATIONDIR/$BASE" ; then
+		echo "- package has $BASE: (unchanged)"
+	    else
+		echo "- package has $BASE: (new or modified)"
+		echo "--------------------------------------------------------------"
+		cat $DIR_TO_CHECK/$BASE
+		echo "--------------------------------------------------------------"
+		if test "$BATCHMODE" != true ; then
+		    echo -n "Is this correct? [N/y/d] (y to ignore) "
+		    read ANSWER
+		    test "$ANSWER" = y -o "$ANSWER" = Y || {
+			if test "$ANSWER" = d -o "$ANSWER" = D ; then
+			    rm -v $DIR_TO_CHECK/$BASE
+			else
+			    echo ok, please fix it...
+			    RETURN=1
+			fi
+		    }
+	    	else
+		    echo "###ASK $DIR_TO_CHECK/$BASE"
+	    	fi
+	    fi
+	    ;;
+	*rpmlintrc)
+	    if test -n "$DESTINATIONDIR" -a -f "$DESTINATIONDIR/$BASE" && cmp -s "$DIR_TO_CHECK/$BASE" "$DESTINATIONDIR/$BASE" ; then
+		echo "- package has $BASE: (unchanged)"
+	    else
+		echo "- package has $BASE: (new or modified)"
+		echo "--------------------------------------------------------------"
+		cat $DIR_TO_CHECK/$BASE
+		echo "--------------------------------------------------------------"
+		if test "$BATCHMODE" != true ; then
+		    echo -n "Is this correct? [N/y/d] (y to ignore) "
+		    read ANSWER
+		    test "$ANSWER" = y -o "$ANSWER" = Y || {
+			if test "$ANSWER" = d -o "$ANSWER" = D ; then
+			    rm -v $DIR_TO_CHECK/$BASE
+			else
+			    echo ok, please fix it...
+			    RETURN=1
+			fi
+		    }
+		else
+			echo "###ASK $DIR_TO_CHECK/$BASE"
+		fi
+	    fi
+	    ILLEGAL_RPMLINTRC="setuid-bit permissions-unauthorized-file permissions-world-writable"
+	    for ignorecheck in $ILLEGAL_RPMLINTRC ; do
+		LINE=$(grep -i $ignorecheck "$DIR_TO_CHECK/$BASE")
+		if [ "$LINE" != "" ]; then
+		    echo "ERROR: Found possibly illegal rpmlintrc line:"
+		    echo "       $LINE"
+		    echo -n "Is this correct? [N/y] (y to ignore) "
+		    read ANSWER
+		    test "$ANSWER" = y -o "$ANSWER" = Y || {
+			echo ok, please fix it...
+			RETURN=1
+		    }
+		fi
+	    done
+	    ;;
+	.*.spec)
+	    rm -v $DIR_TO_CHECK/$BASE
+	    ;; 
+	*.changes | \
+	*.lsm | \
+	*.spec | \
+	*.spec.in | \
+	*.changes.in | \
+	*.test | \
+	MD5SUMS | \
+	MD5SUMS.meta | \
+	Makefile | \
+	README.autobuild | \
+	bigpack | \
+	prepare-build.sh | \
+	minmem | \
+	needed_space_in_mb | \
+	pre_checkin.sh | \
+	newestfile | \
+	.osc | \
+	.bsinfo | \
+	.bsnote | \
+	.check_if_valid_source_dir | \
+	.setup | \
+	debian.changelog | \
+	debian.tar.gz | \
+	*.dsc | \
+	ready | \
+	.gitignore)
+	    ;;
+	*)
+	    grep -a -x $BASE $TMPDIR/sources > /dev/null && continue
+	    echo Attention, $BASE is not mentioned in spec files as source or patch.
+	    if [ -d $DIR_TO_CHECK/$BASE ] ; then
+		echo "!! $BASE is a directory !!"
+		if test "$BATCHMODE" != true ; then
+		    echo "remove the whole subtree with 'd'"
+		    echo -n "Is this correct? [N/y/d] (y to ignore) "
+		    read ANSWER
+		    test "$ANSWER" = y -o "$ANSWER" = Y || {
+			if test "$ANSWER" = d -o "$ANSWER" = D ; then
+			    rm -Rfv $DIR_TO_CHECK/$BASE
+			else
+			    echo ok, please fix it...
+			    RETURN=1
+			fi
+		    }
+		else
+		    echo "###ASK -r $DIR_TO_CHECK/$BASE"
+		fi
+	    else
+		if test "$BATCHMODE" != true ; then
+		    echo -n "Is this correct? [N/y/d] (y to ignore) "
+		    read ANSWER
+		    test "$ANSWER" = y -o "$ANSWER" = Y || {
+			if test "$ANSWER" = d -o "$ANSWER" = D ; then
+			    rm -v $DIR_TO_CHECK/$BASE
+			else
+			    echo ok, please fix it...
+			    RETURN=1
+			fi
+		    }
+		else
+		    echo "###ASK $DIR_TO_CHECK/$BASE"
+		fi
+	    fi
+	    ;;
+    esac
+done
+
+test "$VERBOSE" = true && echo done
+
+cleanup_and_exit $RETURN

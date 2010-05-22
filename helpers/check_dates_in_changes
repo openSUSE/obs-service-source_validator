@@ -1,0 +1,70 @@
+#!/bin/bash
+# $Id: check_dates_in_changes,v 1.3 2007/02/16 08:34:28 lrupp Exp lrupp $
+
+set -f
+
+function usage () {
+	echo "Usage: $(basename $0) <*.changes-file(s)>"
+	echo
+	exit $1
+}
+
+if [ X"$1" = X"" ]; then
+    usage 1
+fi
+
+for CHANGES in $* ; do
+
+    TROUBLE_FOUND=false
+
+    while read LINE ; do
+        case "$LINE" in
+	  removed*) ;;
+	  *@*@*) ;;
+          *-*@*)
+            DATESTR=""
+            LINE=${LINE#\*}
+            for i in $LINE ; do
+                case $i in
+                  *-*|*@*)
+                    break
+                  ;;
+                  CEST|IST|CET)
+                    DATESTR="$DATESTR MEST"
+                  ;;
+                  *)
+                    DATESTR="$DATESTR $i"
+                  ;;
+                esac
+            done
+            for i in $DATESTR ; do
+                if test $i -gt 0 2> /dev/null ; then
+                    LAST_IS_YEAR=true
+                else
+                    LAST_IS_YEAR=false
+                fi
+            done
+			case $DATESTR in
+				\ [MTWFS][a-z][a-z]*)
+				break
+				;;
+				*)
+				echo "$DATESTR is no date"
+				TROUBLE_FOUND=true
+				;;
+			esac
+            DATE=`date +%s --date "$DATESTR" 2> /dev/null`
+            test $? -gt 0 -o -z "$DATE" -o "$LAST_IS_YEAR" != true && {
+                echo $CHANGES 
+                echo "    INVALID \"$DATESTR\" "
+                TROUBLE_FOUND=true
+            }
+          ;;
+        esac
+    done < $CHANGES
+done
+if test $TROUBLE_FOUND = false ; then
+    exit 0
+else
+    exit 1
+fi

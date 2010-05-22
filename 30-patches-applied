@@ -1,0 +1,20 @@
+#!/bin/bash
+
+test "$1" = "--verbose" && { VERBOSE=true ; shift ; }
+test "$1" = "--batchmode" && { BATCHMODE=true ; shift ; }
+DIR_TO_CHECK=$1
+DESTINATIONDIR=$2
+test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
+test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+
+test "$VERBOSE" = true && echo -n "- checking if all metioned patches are being applied in specfile "
+for i in $DIR_TO_CHECK/*.spec ; do
+    test -f $i || continue
+    test "$VERBOSE" = true && echo -n "."
+    RETURN=0
+    # WARNING only at the moment, just complain loudly ...
+    /usr/lib/osc/source_validators/helpers/check_patches_applied $i || echo "########## HAD ERRORS ##########"
+done
+test "$VERBOSE" = true && echo "done"
+
+exit $RETURN

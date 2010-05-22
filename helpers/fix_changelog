@@ -1,0 +1,37 @@
+#!/bin/bash
+# $Id$
+#
+
+function usage (){
+    echo
+    echo "usage: `basename $0` <directory>"
+	echo "       tries to fix all *.changes files in the given directory"
+	echo
+	exit
+}
+
+if [ x"$1" = x"-h" ] || [ x"$1" = x"--help" ]; then
+	usage
+fi
+
+DIR="$1"
+test -z "$DIR" && DIR=$(pwd)
+
+CHANGES_EXIST=$(echo $DIR/*.changes)
+
+if [ -n "$CHANGES_EXIST" ]; then
+  for i in $DIR/*.changes ; do 
+    test -f $i || continue
+    echo "processing $i:"
+    /usr/lib/osc/source_validators/helpers/changelogfilter $i > $i.tmp
+    if test -s $i.tmp ; then
+    	mv $i.tmp $i
+    else
+        echo "fixup failed for $i"
+        rm -f $i.tmp
+    fi
+  done
+else
+  echo "No changes file found" 2>&1
+  usage
+fi

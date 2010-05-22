@@ -1,0 +1,36 @@
+#!/bin/bash
+
+test "$1" = "--verbose" && { VERBOSE=true ; shift ; }
+test "$1" = "--batchmode" && { BATCHMODE=true ; shift ; }
+DIR_TO_CHECK=$1
+DESTINATIONDIR=$2
+test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
+test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+
+RETURN=0
+test "$VERBOSE" = true && echo -n "- checking for stale or missing changes "
+SPECLIST=`/usr/lib/osc/source_validators/helpers/output_versions -q -m $DIR_TO_CHECK | sed -e "s@ .*@@" | sort -u`
+
+for i in $SPECLIST ; do
+    test -f $DIR_TO_CHECK/$i.changes || {
+	echo "ERROR: $i.changes does not exist."
+	RETURN=1
+    }
+done
+# check for stale .changes files
+for i in $DIR_TO_CHECK/*.changes ; do
+    test -f $i || continue
+    N=`basename $i .changes`
+    OKAY=0
+    for pack in $SPECLIST ; do
+        test "$pack" = "$N" && OKAY=1
+    done
+    if test $OKAY = 0 ; then
+	echo "ERROR: $(basename $i) not a subpackage, please remove"
+	RETURN=1
+    fi
+done
+test "$VERBOSE" = true && echo done
+
+
+exit $RETURN

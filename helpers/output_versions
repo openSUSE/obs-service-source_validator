@@ -1,0 +1,211 @@
+#!/usr/bin/perl
+
+
+my $release = "stable";
+my $quiet = 0;
+my $quiet_mainpack = 0;
+my $quiet_specfile = 0;
+my $add_license = 0;
+my $debug = 0;
+my $dir_to_check;
+
+for (@ARGV) {
+	if ($_ eq "-q") {
+		$quiet = 1;
+	} elsif ($_ eq "-m") {
+		$quiet_mainpack = 1;
+	} elsif ($_ eq "-s") {
+		$quiet_specfile = 1;
+	} elsif ($_ eq "-l") {
+		$add_license = 1;
+	} elsif ($_ eq "-d") {
+		$debug = 1;
+	} elsif ($_ eq "-r") {
+		$release = shift @ARGV;
+		$release = `echo $release`;
+		chomp ($release);
+	} else {
+		$dir_to_check = $_;
+		last;
+	}
+}
+
+sub output_package ($$) {
+	my ($rel,$cpack) = @_;
+	my $datestr = `date "+%Y-%m-%d %H:%M:%S"`;
+	chomp ($datestr);
+	print "$datestr $rel $cpack ";
+}
+
+sub output_version ($$) {
+	my ($mpv,$pv) = @_;
+	print "has version ".($pv ? $pv : $mpv)."\n";
+}
+
+sub output_quiet ($$$$$$) {
+	#usleep 1;
+	my ($sp,$pn,$cpk,$cpl,$mpv,$pv) = @_;
+	$sp =~ s/^.*\/([^\/]*)$/$1/;
+	print "$sp " if $quiet_specfile;
+	print "$pn " if $quiet_mainpack;
+	print "$cpk ".($pv ? $pv : $mpv);
+	print " $cpl" if $cpl;
+	print "\n";
+}
+
+my $current_package;
+my $current_package_license;
+my $package_version;
+my $main_package_name;
+my @specs;
+
+opendir (NEWD, "$dir_to_check");
+for (readdir(NEWD)) {
+	push @specs, $_ if (/\.spec$/);
+}
+closedir (NEWD);
+
+for my $specfile (sort(@specs)) {
+	my $buildroot = 0;
+	$main_package_name = "";
+        undef $definelist;
+        undef $ifhandler;
+	open (SPEC,"$dir_to_check/$specfile");
+	my @SPEC = <SPEC>;
+	close (SPEC);
+	while ($_ = shift @SPEC) {
+		chomp();
+	    if ( /^\s*%if/ || /^\s*%\{/ || /^\s*%define/ || /^\s*%el/ || /^\s*%endif/ ) {
+	      if ( /^\s*%if\s/ ) {
+		my @args = split (/\s+/,$_);
+		$_ =~ s/[\{\}\"]//g for (@args);
+		$ifhandler->{"last_if_disabled"} = 0;
+		$ifhandler->{"last_if_if"} = 1;
+		$ifhandler->{"depth"}++;
+		my $if_not = 0;
+		if ( $args[1] =~ /^\!/ ) {
+			$args[1] =~ s/^\!//;
+			$if_not = 1;
+		}
+		warn ("$args[1] $args[2] $args[3] *$main_package_name* *$if_not* \"$_\"\n") if $debug;
+		if (    ($args[1] eq "0")
+			|| ($args[1] eq "%name" && $args[2] eq "!=" && $args[3] eq $main_package_name)
+			|| ($args[1] eq "%name" && $args[2] eq "==" && $args[3] ne $main_package_name)
+			|| ($args[1] && !$args[3] && !$if_not && $definelist->{$args[1]} eq "0")
+			|| ($args[2] eq "==" && $args[3] ne "0" && $definelist->{$args[1]} eq "0")
+			|| ($args[2] eq "!=" && $args[3] eq "0" && $definelist->{$args[1]} eq "0")
+			|| ($args[1] && !$args[3] && $if_not && $definelist->{$args[1]} eq "1")
+			|| ($args[1] && $args[2] eq "!=" && $args[3] eq "1" && $definelist->{$args[1]} eq "1") ) {
+			$ifhandler->{"disabled"} = $ifhandler->{"depth"};
+			$ifhandler->{"last_if_disabled"} = 1;
+			warn("$args[1] $args[2] $args[3] *$main_package_name* *$if_not* strike \"$_\"\n") if $debug;
+		}
+	      } elsif ( /^\s*%if/ ) {
+		$ifhandler->{"last_if_disabled"} = 0;
+		$ifhandler->{"last_if_if"} = 0;
+		$ifhandler->{"depth"}++;
+	      } elsif ( /^\s*%endif/ ) {
+		$ifhandler->{"disabled"} = 0 if $ifhandler->{"disabled"} == $ifhandler->{"depth"};
+		$ifhandler->{"depth"}--;
+	      } elsif ( /^\s*%else/ ) {
+		if ($ifhandler->{"disabled"} == $ifhandler->{"depth"} && $ifhandler->{"last_if_disabled"} == 1) {
+			$ifhandler->{"disabled"} = 0;
+		} elsif ($ifhandler->{"disabled"} == 0 && $ifhandler->{"depth"} == 1 && $ifhandler->{"last_if_if"} == 1) {
+			$ifhandler->{"disabled"} = 1;
+		}
+	      } elsif ( /^\s*%define\s/ ) {
+		my @args = split (/\s+/,$_);
+		$_ =~ s/[\{\}\"]//g for (@args);
+		$args[2] =~ s/\Q$_\E/$definelist->{$_}/g for (sort { length($b) <=> length($a) } keys (%{$definelist}));
+		if ( $args[2] !~ /[\(\)\{\}\@\%\"\\]/ ) {
+			$definelist->{"%".$args[1]} = $args[2] if $ifhandler->{"disabled"} == 0;
+			$definelist->{"%{".$args[1]."}"} = $args[2] if $ifhandler->{"disabled"} == 0;
+		}
+		while ($_ =~ /\\$/) {
+		    $_ = shift @SPEC;
+		}
+	      }
+	    }
+	    if (/^Name:\s+/) {
+		next unless $ifhandler->{"disabled"} == 0;
+		next if $main_package_name;
+		my @args = split (/\s+/,$_);
+		$_ =~ s/[\{\}\"]//g for (@args);
+		$args[1] =~ s/\Q$_\E/$definelist->{$_}/ for (sort { length($b) <=> length($a) } keys (%{$definelist}));
+		$current_package = $args[1];
+		$package_name = $current_package;
+		$main_package_name = $current_package;
+		$definelist->{"%name"} = $current_package;
+		$definelist->{"%{name}"} = $current_package;
+		output_package($release, $current_package) unless $quiet;
+		print "is main package\n" unless $quiet;
+	    }
+	    if (/^License:\s+/) {
+		next unless $ifhandler->{"disabled"} == 0;
+		my $lic = $_;
+		$lic =~ s/^License:\s+//;
+		$current_package_license = "\"$lic\"" if $add_license;
+	    }
+	    if (/^%package\s+/) {
+		next unless $ifhandler->{"disabled"} == 0;
+		if ($quiet) {
+			output_quiet($specfile, $package_name, $current_package, $current_package_license, $main_package_version, $package_version);
+		} else {
+			output_package($release, $current_package);
+			output_version($main_package_version, $package_version);
+			output_package($release, $current_package);
+			print "has ".($buildroot ? "" : "not ")."buildroot\n";
+			if ($current_package_license) {
+				output_package($release, $current_package);
+				print "has license $current_package_license\n";
+			}
+		}
+		$package_version = "";
+		my @args = split (/\s+/,$_);
+		$_ =~ s/[\{\}\"]//g for (@args);
+		if ($args[1] =~ /^-n/) {
+			#warn "trying on ".join(",",(keys (%{$definelist})))."\n" if $debug;
+			$args[2] =~ s/\Q$_\E/$definelist->{$_}/ for (sort { length($b) <=> length($a) } keys (%{$definelist}));
+			$current_package = $args[2];
+		} else {
+			$args[1] =~ s/\Q$_\E/$definelist->{$_}/ for (sort { length($b) <=> length($a) } keys (%{$definelist}));
+			$current_package = "$package_name-".$args[1];
+		}
+		unless ($quiet) {
+			output_package($release, $current_package);
+			print "is built from $package_name\n";
+		}
+	    }
+	    if (/^Version:\s+/) {
+		next unless $ifhandler->{"disabled"} == 0;
+		my @args = split (/\s+/,$_);
+		next if ($args[1] eq "%{version}" || $args[1] eq "%version") && $package_version;
+		if ($debug) {
+			print "key: $_ value: $definelist->{$_}\n" for (sort { length($b) <=> length($a) } keys (%{$definelist}));
+		}
+		$args[1] =~ s/\Q$_\E/$definelist->{$_}/ for (sort { length($b) <=> length($a) } keys (%{$definelist}));
+		$args[1] = "MACRO" if ($args[1] =~ /^%/);
+		$package_version = $args[1];
+		$main_package_version = $args[1] if $current_package eq $package_name;
+	    }
+	    if (/^BuildRoot:\s+/) {
+		$buildroot = 1;
+	    }
+	}
+	if ($quiet) {
+		output_quiet($specfile, $package_name, $current_package, $current_package_license, $main_package_version, $package_version);
+	} else {
+		output_package($release, $current_package);
+		output_version($main_package_version, $package_version);
+		output_package($release, $current_package);
+		print "has ".($buildroot ? "" : "not ")."buildroot\n";
+		if ($current_package_license) {
+			output_package($release, $current_package);
+			print "has license $current_package_license\n";
+		}
+
+	}
+	warn "warning if/endif mismatch in $specfile\n" if $ifhandler->{"disabled"};
+}
+
+

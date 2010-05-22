@@ -1,0 +1,33 @@
+#!/bin/bash
+
+test "$1" = "--verbose" && { VERBOSE=true ; shift ; }
+test "$1" = "--batchmode" && { BATCHMODE=true ; shift ; }
+DIR_TO_CHECK=$1
+DESTINATIONDIR=$2
+test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
+test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+
+test "$VERBOSE" = true && echo -n "- checking for sequence in changes files "
+FIRST_CHANGES=""
+for i in $DIR_TO_CHECK/*.changes ; do
+    test -f $i || continue
+    RETURN=0
+    test -n "$FIRST_CHANGES" || FIRST_CHANGES=$i
+    if test -n "$FIRST_CHANGES" -a "$FIRST_CHANGES" != "$i" ; then
+        if cmp -s $FIRST_CHANGES $i ; then
+            continue
+        fi
+    fi
+    /usr/lib/osc/source_validators/helpers/check_dates_in_changes $i || {
+	echo "Please fix with your own tools or try /usr/lib/osc/source_validators/helpers/fix_changelog" >&2;
+	RETURN=1
+    }
+    /usr/lib/osc/source_validators/helpers/convert_changes_to_rpm_changelog --check < $i > /dev/null || {
+	echo "Please fix with your own tools or try /usr/lib/osc/source_validators/helpers/fix_changelog" >&2;
+	RETURN=1
+    }
+
+done
+test "$VERBOSE" = true && echo done
+
+exit $RETURN
