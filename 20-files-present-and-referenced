@@ -252,27 +252,31 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	debian.tar.gz | \
 	*.dsc | \
 	ready | \
+	_* | \
 	.gitignore)
 	    ;;
 	*)
 	    grep -a -x $BASE $TMPDIR/sources > /dev/null && continue
 	    echo Attention, $BASE is not mentioned in spec files as source or patch.
 	    if [ -d $DIR_TO_CHECK/$BASE ] ; then
+                # be a bit more relaxed for osc, it won't upload directories anyway
+                if [ ! -d $DIR_TO_CHECK/.osc ] ; then
 		echo "!! $BASE is a directory !!"
-		if test "$BATCHMODE" != true ; then
-		    echo "remove the whole subtree with 'd'"
-		    echo -n "Is this correct? [N/y/d] (y to ignore) "
-		    read ANSWER
-		    test "$ANSWER" = y -o "$ANSWER" = Y || {
-			if test "$ANSWER" = d -o "$ANSWER" = D ; then
-			    rm -Rfv $DIR_TO_CHECK/$BASE
-			else
-			    echo ok, please fix it...
-			    RETURN=1
-			fi
-		    }
-		else
-		    echo "###ASK -r $DIR_TO_CHECK/$BASE"
+		    if test "$BATCHMODE" != true ; then
+		        echo "remove the whole subtree with 'd'"
+		        echo -n "Is this correct? [N/y/d] (y to ignore) "
+		        read ANSWER
+		        test "$ANSWER" = y -o "$ANSWER" = Y || {
+		    	if test "$ANSWER" = d -o "$ANSWER" = D ; then
+		    	    rm -Rfv $DIR_TO_CHECK/$BASE
+		    	else
+		    	    echo ok, please fix it...
+		    	    RETURN=1
+		    	fi
+		        }
+		    else
+		        echo "###ASK -r $DIR_TO_CHECK/$BASE"
+		    fi
 		fi
 	    else
 		if test "$BATCHMODE" != true ; then

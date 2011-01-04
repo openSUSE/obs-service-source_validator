@@ -13,8 +13,8 @@ SPECLIST=`/usr/lib/osc/source_validators/helpers/output_versions -q -m $DIR_TO_C
 
 for i in $SPECLIST ; do
     test -f $DIR_TO_CHECK/$i.changes || {
-	echo "ERROR: $i.changes does not exist."
-	RETURN=1
+	echo "WARNING: $i.changes does not exist. This package can not be submitted to openSUSE product projects."
+	exit 0
     }
 done
 # check for stale .changes files
