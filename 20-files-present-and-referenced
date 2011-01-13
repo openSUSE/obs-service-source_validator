@@ -141,6 +141,12 @@ for HASTOBETHER in `cat $TMPDIR/sources` ; do
     }
 done
 
+#
+# Skip this test for now, if we have server side downloads
+#
+if [ -e $DIR_TO_CHECK/_service ]; then
+    exit 0
+fi
 
 #
 # now check if everything is marked in spec files.

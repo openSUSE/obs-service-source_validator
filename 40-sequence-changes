@@ -9,6 +9,7 @@ test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_
 
 test "$VERBOSE" = true && echo -n "- checking for sequence in changes files "
 FIRST_CHANGES=""
+RETURN=0
 for i in $DIR_TO_CHECK/*.changes ; do
     test -f $i || continue
     RETURN=0

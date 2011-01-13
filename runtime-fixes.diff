@@ -1,20 +1,6 @@
-diff -urN osc-source_validator//20-files-present-and-referenced /usr/lib/osc/source_validators//20-files-present-and-referenced
---- osc-source_validator//20-files-present-and-referenced	2010-05-20 18:11:06.000000000 +0200
-+++ /usr/lib/osc/source_validators//20-files-present-and-referenced	2010-05-22 08:34:16.778308518 +0200
-@@ -141,6 +141,12 @@
-     }
- done
- 
-+#
-+# Skip this test for now, if we have server side downloads
-+#
-+if [ -e $DIR_TO_CHECK/_service ]; then
-+    exit 0
-+fi
- 
- #
- # now check if everything is marked in spec files.
-@@ -252,21 +258,24 @@
+--- osc-source_validator/20-files-present-and-referenced
++++ osc-source_validator/20-files-present-and-referenced
+@@ -258,21 +258,24 @@
  	    grep -a -x $BASE $TMPDIR/sources > /dev/null && continue
  	    echo Attention, $BASE is not mentioned in spec files as source or patch.
  	    if [ -d $DIR_TO_CHECK/$BASE ] ; then
@@ -53,31 +39,8 @@ diff -urN osc-source_validator//20-files-present-and-referenced /usr/lib/osc/sou
  		fi
  	    else
  		if test "$BATCHMODE" != true ; then
-diff -urN osc-source_validator//30-patches-applied /usr/lib/osc/source_validators//30-patches-applied
---- osc-source_validator//30-patches-applied	2010-05-20 18:11:06.000000000 +0200
-+++ /usr/lib/osc/source_validators//30-patches-applied	2010-05-22 08:14:23.598355451 +0200
-@@ -6,6 +6,7 @@
- DESTINATIONDIR=$2
- test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
- test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
-+RETURN=0
- 
- test "$VERBOSE" = true && echo -n "- checking if all metioned patches are being applied in specfile "
- for i in $DIR_TO_CHECK/*.spec ; do
-diff -urN osc-source_validator//40-sequence-changes /usr/lib/osc/source_validators//40-sequence-changes
---- osc-source_validator//40-sequence-changes	2010-05-20 18:11:06.000000000 +0200
-+++ /usr/lib/osc/source_validators//40-sequence-changes	2010-05-22 08:24:20.546289032 +0200
-@@ -9,6 +9,7 @@
- 
- test "$VERBOSE" = true && echo -n "- checking for sequence in changes files "
- FIRST_CHANGES=""
-+RETURN=0
- for i in $DIR_TO_CHECK/*.changes ; do
-     test -f $i || continue
-     RETURN=0
-diff -urN osc-source_validator//45-stale-changes /usr/lib/osc/source_validators//45-stale-changes
---- osc-source_validator//45-stale-changes	2010-05-20 18:11:06.000000000 +0200
-+++ /usr/lib/osc/source_validators//45-stale-changes	2010-05-22 08:35:44.166288262 +0200
+--- osc-source_validator/45-stale-changes
++++ osc-source_validator/45-stale-changes
 @@ -13,8 +13,8 @@
  
  for i in $SPECLIST ; do
@@ -89,25 +52,3 @@ diff -urN osc-source_validator//45-stale-changes /usr/lib/osc/source_validators/
      }
  done
  # check for stale .changes files
-diff -urN osc-source_validator//50-spec-version /usr/lib/osc/source_validators//50-spec-version
---- osc-source_validator//50-spec-version	2010-05-20 18:11:06.000000000 +0200
-+++ /usr/lib/osc/source_validators//50-spec-version	2010-05-22 08:13:43.038687333 +0200
-@@ -6,6 +6,7 @@
- DESTINATIONDIR=$2
- test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
- test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
-+RETURN=0
- 
- test "$VERBOSE" = true && echo -n "- checking version in specfile "
- for i in $DIR_TO_CHECK/*.spec ; do
-diff -urN osc-source_validator//60-spec-filelist /usr/lib/osc/source_validators//60-spec-filelist
---- osc-source_validator//60-spec-filelist	2010-05-20 18:11:06.000000000 +0200
-+++ /usr/lib/osc/source_validators//60-spec-filelist	2010-05-22 08:24:49.778308726 +0200
-@@ -8,6 +8,7 @@
- test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
- 
- test "$VERBOSE" = true && echo -n "- checking forbidden paths in filelists "
-+RETURN=0
- for SPECFILE in $DIR_TO_CHECK/*.spec ; do
-     test -f $SPECFILE || continue
-     test "$VERBOSE" = true && echo -n "."

@@ -6,6 +6,7 @@ DIR_TO_CHECK=$1
 DESTINATIONDIR=$2
 test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
 test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+RETURN=0
 
 test "$VERBOSE" = true && echo -n "- checking if all metioned patches are being applied in specfile "
 for i in $DIR_TO_CHECK/*.spec ; do

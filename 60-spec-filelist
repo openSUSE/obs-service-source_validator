@@ -8,6 +8,7 @@ test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
 test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
 
 test "$VERBOSE" = true && echo -n "- checking forbidden paths in filelists "
+RETURN=0
 for SPECFILE in $DIR_TO_CHECK/*.spec ; do
     test -f $SPECFILE || continue
     test "$VERBOSE" = true && echo -n "."
