@@ -10,6 +10,7 @@ RETURN=0
 
 test "$VERBOSE" = true && echo -n "- checking version in specfile "
 for i in $DIR_TO_CHECK/*.spec ; do
+    WARNING_SHOWN=""
     test -f $i || continue
     test "$VERBOSE" = true && echo -n "."
     RETURN=0
@@ -27,13 +28,16 @@ for i in $DIR_TO_CHECK/*.spec ; do
             }
           ;;
           %*)
-                echo "WARNING: macro used in version line"
-                echo "packager is responsible that the resulting string"
-                echo "is non-empty and contains no \"-\"."
-		echo "----------"
-		grep -A2 -B2 -a -i -e "^Version:.*%" $i
-		echo "----------"
-		sleep 2
+		if test -z "$WARNING_SHOWN" ; then
+		    echo "WARNING: macro used in version line"
+		    echo "packager is responsible that the resulting string"
+		    echo "is non-empty and contains no \"-\"."
+		    echo "----------"
+		    grep -A2 -B2 -a -i -e "^Version:.*%" $i
+		    echo "----------"
+		    WARNING_SHOWN="yes"
+		    sleep 2
+		fi
           ;;
           *-*)
             echo ERROR: `basename $i` has a Version with a \"-\". This is not allowed.
@@ -47,6 +51,7 @@ for i in $DIR_TO_CHECK/*.spec ; do
     done || RETURN=1
 
 done
+
 test "$VERBOSE" = true && echo done
 
 exit $RETURN
