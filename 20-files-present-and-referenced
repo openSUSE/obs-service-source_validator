@@ -254,6 +254,8 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	*.dsc | \
 	ready | \
 	_* | \
+	*.orig | \
+	*~ | \
 	.gitignore)
 	    ;;
 	*)
@@ -264,11 +266,13 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
                 if [ ! -d $DIR_TO_CHECK/.osc ] ; then
 		echo "!! $BASE is a directory !!"
 		    if test "$BATCHMODE" != true ; then
-		        echo "remove the whole subtree with 'd'"
-		        echo -n "Is this correct? [N/y/d] (y to ignore) "
+		        echo    "     remove subtree with 'r'"
+		        echo    "ignore and continue with 'y'"
+		        echo -n "Is this correct? [N/y/r] "
 		        read ANSWER
 		        test "$ANSWER" = y -o "$ANSWER" = Y || {
-		    	if test "$ANSWER" = d -o "$ANSWER" = D ; then
+			# r for remove is also accepted, to make it compatible with osc itself
+		    	if test "$ANSWER" = d -o "$ANSWER" = D -o "$ANSWER" = r -o "$ANSWER" = R; then
 		    	    rm -Rfv $DIR_TO_CHECK/$BASE
 		    	else
 		    	    echo ok, please fix it...
