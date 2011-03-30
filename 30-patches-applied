@@ -1,7 +1,8 @@
 #!/bin/bash
 
 test "$1" = "--verbose" && { VERBOSE=true ; shift ; }
-test "$1" = "--batchmode" && { BATCHMODE=true ; shift ; }
+BATCHMODE=""
+test "$1" = "--batchmode" && { BATCHMODE="--batchmode" ; shift ; }
 DIR_TO_CHECK=$1
 DESTINATIONDIR=$2
 test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
@@ -14,7 +15,7 @@ for i in $DIR_TO_CHECK/*.spec ; do
     test "$VERBOSE" = true && echo -n "."
     RETURN=0
     # WARNING only at the moment, just complain loudly ...
-    /usr/lib/osc/source_validators/helpers/check_patches_applied $i || echo "########## HAD ERRORS ##########"
+    /usr/lib/osc/source_validators/helpers/check_patches_applied $BATCHMODE $i || echo "########## HAD ERRORS ##########"
 done
 test "$VERBOSE" = true && echo "done"
 
