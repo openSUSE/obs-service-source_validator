@@ -249,14 +249,33 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	.bsnote | \
 	.check_if_valid_source_dir | \
 	.setup | \
-	debian.changelog | \
-	debian.tar.gz | \
 	*.dsc | \
 	ready | \
 	_* | \
 	*.orig | \
 	*~ | \
-	.gitignore)
+	.gitignore | \
+	debian.changelog | \
+	debian.compat | \
+	debian.control | \
+	debian.copyright | \
+	debian.postinst | \
+	debian.postrm | \
+	debian.preinst | \
+	debian.prerm | \
+	debian.rules | \
+	debian.tar.gz | \
+	debian.triggers | \
+	debian.*.default | \
+	debian.*.dirs | \
+	debian.*.files | \
+	debian.*.init | \
+	debian.*.install | \
+	debian.*.logrotate | \
+	debian.*.postinst | \
+	debian.*.postrm | \
+	debian.*.preinst | \
+	debian.*.prerm )
 	    ;;
 	*)
 	    grep -a -x $BASE $TMPDIR/sources > /dev/null && continue
