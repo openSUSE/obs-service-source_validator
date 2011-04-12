@@ -9,6 +9,7 @@ if ($ARGV[0] eq "--batchmode") {
 my $filename = $ARGV[0];
 $filename =~ s/^.*\///g;
 my @PATCHES;
+my @PATCHES_COMMENTED;
 my @APPLIED;
 my $errors = 0;
 
@@ -25,6 +26,7 @@ unless ($batchmode) {
 while (<>) {
    if (/^(#\s*)?[Pp]atch[0-9\s]*:/) {
 	my ($front,$back) = split(":",$_,2);
+	my $commented = ($front =~ /^#/) ? 1 : 0;
 	$front =~ s/^(#\s*)?[Pp]atch//;
 	$front =~ s/\s*$//;
 	$front = 0 unless $front;
@@ -32,6 +34,7 @@ while (<>) {
 	$back =~ s/^\s*//;
 	$back =~ s/^.*\///g;
 	$PATCHES[$front] = $back;
+	$PATCHES_COMMENTED[$front] = 1 if $commented;
 	next;
     }
    if (/^(#.*)?%[Pp]atch/) {
@@ -89,6 +92,10 @@ for my $i (1...$#PATCHES) {
         if ($APPLIED[$i] && $APPLIED[$i] == 3) {
 		print STDERR "$col_yel(W) $filename: patch $i $PATCHES[$i]: mentioned in specfile but not applied via %patch$col_norm\n";
 		next;
+	}
+        if ($PATCHES_COMMENTED[$i]) {
+		print STDERR "$col_yel(W) $filename: patch $i $PATCHES[$i]: is commented out$col_norm\n";
+                next;
 	}
 	print STDERR "$col_red(E) $filename: patch $i $PATCHES[$i] apparently not applied (or not applied via %patch)$col_norm\n";
 	$errors++;

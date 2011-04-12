@@ -15,7 +15,7 @@ for i in $DIR_TO_CHECK/*.spec ; do
     test "$VERBOSE" = true && echo -n "."
     RETURN=0
     # WARNING only at the moment, just complain loudly ...
-    /usr/lib/osc/source_validators/helpers/check_patches_applied $BATCHMODE $i || echo "########## HAD ERRORS ##########"
+    /usr/lib/osc/source_validators/helpers/check_patches_applied $BATCHMODE $i || RETURN=1
 done
 test "$VERBOSE" = true && echo "done"
 
