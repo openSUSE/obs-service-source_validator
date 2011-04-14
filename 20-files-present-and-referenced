@@ -135,11 +135,26 @@ for i in `cat $TMPDIR/sources` ; do
 done
 mv $TMPDIR/sources.t $TMPDIR/sources
 
+check_tracked()
+{
+	local file=${1##*/}
+
+	if ! test -f "$DIR_TO_CHECK/$file"; then
+		echo "$file mentioned in spec file does not exist."
+		return 1
+	fi
+	if test -f "$DESTINATIONDIR/$file"; then
+		return 0
+	fi
+	if grep -qsFx "$file" "$DESTINATIONDIR/_to_be_added"; then
+		return 0
+	fi
+	echo "$file mentioned in spec file is not tracked."
+	return 1
+}
+
 for HASTOBETHER in `cat $TMPDIR/sources` ; do
-    test -f $DIR_TO_CHECK/$HASTOBETHER || {
-	echo $HASTOBETHER mentioned in spec file does not exist.
-	RETURN=1
-    }
+    check_tracked "$HASTOBETHER" || RETURN=1
 done
 
 #
