@@ -41,7 +41,8 @@ while (<>) {
 	my $applied = (/^#/) ? 2 :1;
 	my @line = split (/\s+/,$_);
 	my $had_P = grep {/^-P/} @line;
-	while (my $arg = shift (@line)) {
+	while (@line) {
+		my $arg = shift (@line);
 		if ($arg eq "-P") {
 			$arg = shift (@line);
 			if ($arg =~ /^[0-9]/) {
@@ -53,7 +54,7 @@ while (<>) {
 		} elsif ($arg =~ /^-P/) {
 			$arg =~ s/^-P//;
 			if ($arg =~ /^[0-9]/) {
-				$APPLIED[$arg] = $applied;
+				$APPLIED[$arg] = $applied unless $APPLIED[$arg];
 			} else {
 				print STDERR "$col_red(E) %patch -P without following numeric argument$col_norm\n";
 				$errors++;
@@ -61,12 +62,12 @@ while (<>) {
 		} elsif ($arg =~ /^(#.*)?%[Pp]atch$/) {
 			unless ($had_P) {
 				$arg = 0;
-				$APPLIED[$arg] = $applied;
+				$APPLIED[$arg] = $applied unless $APPLIED[$arg];
 			}
 		} elsif ($arg =~ /^(#.*)?%[Pp]atch/) {
 			$arg =~ s/^(#.*)?%[Pp]atch//;
 			if ($arg =~ /^[0-9]/) {
-				$APPLIED[$arg] = $applied;
+				$APPLIED[$arg] = $applied unless $APPLIED[$arg];
 			} else {
 				print STDERR "$col_red(E) %patchZZZ without following numeric argument$col_norm\n";
 				$errors++;
@@ -78,7 +79,7 @@ while (<>) {
    if (/%\{?(PATCH|Patch|patch|P:)[0-9]+\}?/) {
 	$_ =~ s/^.*%\{?(PATCH|Patch|patch|P:)//;
 	$_ =~ s/^([0-9]*).*$/$1/;
-	$APPLIED[$_] = 3 if (/[0-9]+/);
+	$APPLIED[$_] = 3 if (/[0-9]+/ && !$APPLIED[$_]);
    }
 }
 
