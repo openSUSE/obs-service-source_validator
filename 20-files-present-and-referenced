@@ -96,9 +96,10 @@ for i in $DIR_TO_CHECK/*.spec ; do
 		/^Supplements/d
 		/^Suggests/d
 		/^Enhances/d
-		s/^\([Ss]ource\|[Pp]atch\)[0-9]*:[ 	]*/%{echo:/
-		s/^Release:.*<RELEASE.*>/Release: 0/
-		/^%{echo:/s/$/ }/' $i >$TMPDIR/tmp.spec
+		/^\([Ss]ource\|[Pp]atch\)[0-9]*:[ 	]*/{
+			s/^\(\([Ss]ource\|[Pp]atch\)[0-9]*:[ 	]*\)\(.*\)/##seen \1\3\n%{echo:\3 }/
+		}
+		s/^Release:.*<RELEASE.*>/Release: 0/' $i >$TMPDIR/tmp.spec
 	grep -a ^Icon: $i|sed -n 's/^Icon:[ 	]*/%{echo:/
 		/^%{echo:/s/$/ }/p' >>$TMPDIR/tmp.spec
 	grep -a -q ^Release $i || {
@@ -109,6 +110,9 @@ for i in $DIR_TO_CHECK/*.spec ; do
 		   -gt `grep -a "^%endif" $TMPDIR/tmp.spec | wc -l` ; do
 		echo "%endif" >> $TMPDIR/tmp.spec
 	done
+	while read line ; do
+	    grep -qx "##seen $line" $TMPDIR/tmp.spec || echo "$line" | sed -e "s/^\(\([Ss]ource\|[Pp]atch\)[0-9]*:[    ]*\)\(.*\)/##seen \1\3\n%{echo:\3 }/" >> $TMPDIR/tmp.spec
+	done < <(grep -E "^Source:|^Source[0-9]*:|^Patch:|^Patch[0-9]*:" $i)
         echo "%description" >> $TMPDIR/tmp.spec
 
 	# hack for really strange specfiles with more than one Name: line	
