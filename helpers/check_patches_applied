@@ -1,8 +1,13 @@
 #!/usr/bin/perl -w
 
 my $batchmode = 0;
+my $debug = 0;
 if ($ARGV[0] eq "--batchmode") {
    $batchmode = 1;
+   shift;
+}
+if ($ARGV[0] eq "--debug") {
+   $debug = 1;
    shift;
 }
 
@@ -49,6 +54,7 @@ while (<>) {
 				$APPLIED[$arg] = $applied;
 			} else {
 				print STDERR "$col_red(E) %patch -P without following numeric argument$col_norm\n";
+				print STDERR "line was $_\n" if $debug;
 				$errors++;
 			}
 		} elsif ($arg =~ /^-P/) {
@@ -57,6 +63,7 @@ while (<>) {
 				$APPLIED[$arg] = $applied unless $APPLIED[$arg];
 			} else {
 				print STDERR "$col_red(E) %patch -P without following numeric argument$col_norm\n";
+				print STDERR "line was $_\n" if $debug;
 				$errors++;
 			}
 		} elsif ($arg =~ /^(#.*)?%[Pp]atch$/) {
@@ -64,12 +71,13 @@ while (<>) {
 				$arg = 0;
 				$APPLIED[$arg] = $applied unless $APPLIED[$arg];
 			}
-		} elsif ($arg =~ /^(#.*)?%?[Pp]atch/) {
+		} elsif ($arg =~ /^(#.*)?%?patch[^-]/ || $arg =~ /^(#.*)?%?Patch[^-].*:.*/) {
 			$arg =~ s/^(#.*)?%?[Pp]atch//;
 			if ($arg =~ /^[0-9]/) {
 				$APPLIED[$arg] = $applied unless $APPLIED[$arg];
 			} else {
 				print STDERR "$col_red(E) %patchZZZ without following numeric argument$col_norm\n";
+				print STDERR "line was $_\n" if $debug;
 				$errors++;
 			}
 		}
