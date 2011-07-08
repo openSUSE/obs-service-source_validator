@@ -237,10 +237,10 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 			echo "###ASK $DIR_TO_CHECK/$BASE"
 		fi
 	    fi
-	    ILLEGAL_RPMLINTRC="setuid-bit permissions-unauthorized-file permissions-world-writable"
-	    for ignorecheck in $ILLEGAL_RPMLINTRC ; do
-		LINE=$(grep -i $ignorecheck "$DIR_TO_CHECK/$BASE")
-		if [ "$LINE" != "" ]; then
+
+	    LINE=$(egrep -w setBadness "$DIR_TO_CHECK/$BASE")
+	    if [ "$LINE" != "" ]; then
+	        if test "$BATCHMODE" != true ; then
 		    echo "ERROR: Found possibly illegal rpmlintrc line:"
 		    echo "       $LINE"
 		    echo -n "Is this correct? [N/y] (y to ignore) "
@@ -249,8 +249,10 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 			echo ok, please fix it...
 			RETURN=1
 		    }
+		else
+		    echo "###ASK $DIR_TO_CHECK/$BASE"
 		fi
-	    done
+	    fi
 	    ;;
 	.*.spec)
 	    rm -v $DIR_TO_CHECK/$BASE
