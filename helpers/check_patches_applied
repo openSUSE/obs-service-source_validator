@@ -42,7 +42,7 @@ while (<>) {
 	$PATCHES_COMMENTED[$front] = 1 if $commented;
 	next;
     }
-   if (/^(#.*)?%[Pp]atch/ || /^#[Pp]atch/) {
+   if (/^([#\s]*)?%[Pp]atch/ || /^#[Pp]atch/) {
 	my $applied = (/^#/) ? 2 :1;
 	my @line = split (/\s+/,$_);
 	my $had_P = grep {/^-P/} @line;
@@ -66,13 +66,13 @@ while (<>) {
 				print STDERR "line was $_\n" if $debug;
 				$errors++;
 			}
-		} elsif ($arg =~ /^(#.*)?%[Pp]atch$/) {
+		} elsif ($arg =~ /^([#\s]*)?%[Pp]atch$/) {
 			unless ($had_P) {
 				$arg = 0;
 				$APPLIED[$arg] = $applied unless $APPLIED[$arg];
 			}
-		} elsif ($arg =~ /^(#.*)?%?patch[^-]/ || $arg =~ /^(#.*)?%?Patch[^-].*:.*/) {
-			$arg =~ s/^(#.*)?%?[Pp]atch//;
+		} elsif ($arg =~ /^([#\s]*)?%?patch[^-]/ || $arg =~ /^([#\s]*)?%?Patch[^-].*:.*/) {
+			$arg =~ s/^([#\s]*)?%?[Pp]atch//;
 			if ($arg =~ /^[0-9]/) {
 				$APPLIED[$arg] = $applied unless $APPLIED[$arg];
 			} else {
