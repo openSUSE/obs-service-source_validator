@@ -30,7 +30,7 @@ for SPECFILE in $DIR_TO_CHECK/*.spec ; do
                     case $LINE in
                       */usr/man/*|*/usr/info/*|*/usr/include/X11/*|*/usr/bin/X11/*)
                         RETURN=1
-                        echo `basename $SPECFILE` uses forbidden file path \"$LINE\".
+                        echo "(E)" `basename $SPECFILE` uses forbidden file path \"$LINE\".
                       ;;
                     esac
                 }
