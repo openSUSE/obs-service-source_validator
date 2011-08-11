@@ -166,7 +166,7 @@ check_tracked()
 }
 
 for HASTOBETHER in `cat $TMPDIR/sources` ; do
-    check_tracked "$HASTOBETHER" || RETURN=1
+    check_tracked "$HASTOBETHER" || RETURN=2
 done
 
 #
@@ -206,7 +206,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 			    rm -v $DIR_TO_CHECK/$BASE
 			else
 			    echo ok, please fix it...
-			    RETURN=1
+			    test "$RETURN" != "2" && RETURN=1
 			fi
 		    }
 	    	else
@@ -230,7 +230,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 			    rm -v $DIR_TO_CHECK/$BASE
 			else
 			    echo ok, please fix it...
-			    RETURN=1
+			    test "$RETURN" != "2" && RETURN=1
 			fi
 		    }
 		else
@@ -247,7 +247,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 		    read ANSWER
 		    test "$ANSWER" = y -o "$ANSWER" = Y || {
 			echo ok, please fix it...
-			RETURN=1
+			test "$RETURN" != "2" && RETURN=1
 		    }
 		else
 		    echo "###ASK $DIR_TO_CHECK/$BASE"
@@ -309,7 +309,8 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	*)
 	    grep -a -x $BASE $TMPDIR/sources > /dev/null && continue
 	    echo "(W) Attention, $BASE is not mentioned in spec files as source or patch."
-	    if [ -d $DIR_TO_CHECK/$BASE ] ; then
+	    if test "$RETURN" != "2" ; then
+	      if [ -d $DIR_TO_CHECK/$BASE ] ; then
                 # be a bit more relaxed for osc, it won't upload directories anyway
                 if [ ! -d $DIR_TO_CHECK/.osc ] ; then
 		echo "!! $BASE is a directory !!"
@@ -324,14 +325,14 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 		    	    rm -Rfv $DIR_TO_CHECK/$BASE
 		    	else
 		    	    echo ok, please fix it...
-		    	    RETURN=1
+			    test "$RETURN" != "2" && RETURN=1
 		    	fi
 		        }
 		    else
 		        echo "###ASK -r $DIR_TO_CHECK/$BASE"
 		    fi
 		fi
-	    else
+	      else
 		if test "$BATCHMODE" != true ; then
 		    echo -n "Is this correct? [N/y/d] (y to ignore) "
 		    read ANSWER
@@ -340,12 +341,13 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 			    rm -v $DIR_TO_CHECK/$BASE
 			else
 			    echo ok, please fix it...
-			    RETURN=1
+			    test "$RETURN" != "2" && RETURN=1
 			fi
 		    }
 		else
 		    echo "###ASK $DIR_TO_CHECK/$BASE"
 		fi
+	      fi
 	    fi
 	    ;;
     esac
