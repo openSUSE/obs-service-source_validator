@@ -78,7 +78,8 @@ for my $specfile (sort(@specs)) {
 	    if ( /^\s*%if/ || /^\s*%\{/ || /^\s*%define/ || /^\s*%el/ || /^\s*%endif/ ) {
 	      if ( /^\s*%if\s/ ) {
 		my @args = split (/\s+/,$_);
-		$_ =~ s/[\{\}\"]//g for (@args);
+		$_ =~ s/[\?\{\}\"]//g for (@args);
+		$_ =~ s/^0%/%/ for (@args);
 		$ifhandler->{"last_if_disabled"} = 0;
 		$ifhandler->{"last_if_if"} = 1;
 		$ifhandler->{"depth"}++;
@@ -115,7 +116,7 @@ for my $specfile (sort(@specs)) {
 		}
 	      } elsif ( /^\s*%define\s/ ) {
 		my @args = split (/\s+/,$_);
-		$_ =~ s/[\{\}\"]//g for (@args);
+		$_ =~ s/[\?\{\}\"]//g for (@args);
 		$args[2] =~ s/\Q$_\E/$definelist->{$_}/g for (sort { length($b) <=> length($a) } keys (%{$definelist}));
 		if ( $args[2] !~ /[\(\)\{\}\@\%\"\\]/ ) {
 			$definelist->{"%".$args[1]} = $args[2] if $ifhandler->{"disabled"} == 0;
@@ -130,7 +131,7 @@ for my $specfile (sort(@specs)) {
 		next unless $ifhandler->{"disabled"} == 0;
 		next if $main_package_name;
 		my @args = split (/\s+/,$_);
-		$_ =~ s/[\{\}\"]//g for (@args);
+		$_ =~ s/[\?\{\}\"]//g for (@args);
 		$args[1] =~ s/\Q$_\E/$definelist->{$_}/ for (sort { length($b) <=> length($a) } keys (%{$definelist}));
 		$current_package = $args[1];
 		$package_name = $current_package;
@@ -162,7 +163,7 @@ for my $specfile (sort(@specs)) {
 		}
 		$package_version = "";
 		my @args = split (/\s+/,$_);
-		$_ =~ s/[\{\}\"]//g for (@args);
+		$_ =~ s/[\?\{\}\"]//g for (@args);
 		if ($args[1] =~ /^-n/) {
 			#warn "trying on ".join(",",(keys (%{$definelist})))."\n" if $debug;
 			$args[2] =~ s/\Q$_\E/$definelist->{$_}/ for (sort { length($b) <=> length($a) } keys (%{$definelist}));
