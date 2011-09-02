@@ -51,7 +51,8 @@ for i in $DIR_TO_CHECK/*.spec ; do
 		/^%global.*%(.*)/d
 		/^%global/{;p;d;}
 		/^%include/d
-		/^%rubygems_requires/d
+		/^%[a-z]*_requires/d
+		/^%{[a-z]*_requires}/d
 		/^%gconf_schemas_prereq/d
 		/^%requires_eq/{;p;d;}
 		/^%requires_ge/{;p;d;}
