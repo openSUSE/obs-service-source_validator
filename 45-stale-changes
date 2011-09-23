@@ -9,7 +9,7 @@ test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_
 
 RETURN=0
 test "$VERBOSE" = true && echo -n "- checking for stale or missing changes "
-SPECLIST=`/usr/lib/osc/source_validators/helpers/output_versions -q -m $DIR_TO_CHECK | sed -e "s@ .*@@" | sort -u`
+SPECLIST=`/usr/lib/obs/service/source_validators/helpers/output_versions -q -m $DIR_TO_CHECK | sed -e "s@ .*@@" | sort -u`
 
 test -n "$SPECLIST" && {
 for i in $SPECLIST ; do

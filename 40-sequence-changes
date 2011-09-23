@@ -19,12 +19,12 @@ for i in $DIR_TO_CHECK/*.changes ; do
             continue
         fi
     fi
-    /usr/lib/osc/source_validators/helpers/check_dates_in_changes $i || {
-	echo "Please fix with your own tools or try /usr/lib/osc/source_validators/helpers/fix_changelog" >&2;
+    /usr/lib/obs/service/source_validators/helpers/check_dates_in_changes $i || {
+	echo "Please fix with your own tools or try /usr/lib/obs/service/source_validators/helpers/fix_changelog" >&2;
 	RETURN=1
     }
-    /usr/lib/osc/source_validators/helpers/convert_changes_to_rpm_changelog --check < $i > /dev/null || {
-	echo "Please fix with your own tools or try /usr/lib/osc/source_validators/helpers/fix_changelog" >&2;
+    /usr/lib/obs/service/source_validators/helpers/convert_changes_to_rpm_changelog --check < $i > /dev/null || {
+	echo "Please fix with your own tools or try /usr/lib/obs/service/source_validators/helpers/fix_changelog" >&2;
 	RETURN=1
     }
 
