@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Verify local sources as required by openSUSE:Factory project
+
+
+while test $# -gt 0; do
+  case $1 in
+    *-outdir)
+      # just dummy ...
+      MYOUTDIR="$2"
+      shift
+    ;;
+    *)
+      echo Unknown parameter $1.
+      echo 'Usage: this service is not excepting parameters'
+      exit 1
+    ;;
+  esac
+  shift
+done
+
+FILE="${PATH##*/}"
+
+RETURN=0
+for i in /usr/lib/obs/service/source_validators/*; do
+  if [ -f "$i" ]; then
+    if [ -z "$PS1" ]; then
+      "$i" --batchmode || RETURN=1
+    else
+      "$i" || RETURN=1
+    fi
+  fi
+done
+
+exit $RETURN
+
