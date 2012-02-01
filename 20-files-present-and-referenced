@@ -289,7 +289,9 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	_* | \
 	*.orig | \
 	*~ | \
+	.git | \
 	.gitignore | \
+	.emacs.backup | \
 	debian.changelog | \
 	debian.compat | \
 	debian.control | \
