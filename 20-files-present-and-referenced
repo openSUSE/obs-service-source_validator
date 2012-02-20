@@ -244,7 +244,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 		fi
 	    fi
 
-	    LINE=$(egrep -w setBadness "$DIR_TO_CHECK/$BASE")
+	    LINE=$(egrep "^[^#]*setBadness" "$DIR_TO_CHECK/$BASE")
 	    if [ "$LINE" != "" ]; then
 	        if test "$BATCHMODE" != true ; then
 		    echo "ERROR: Found possibly illegal rpmlintrc line:"
