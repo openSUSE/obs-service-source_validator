@@ -1,5 +1,5 @@
 PRJ=openSUSE:Tools
-PKG=osc-source_validator
+PKG=obs-service-source_validator
 
 all:
 
