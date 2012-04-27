@@ -125,8 +125,8 @@ for i in $DIR_TO_CHECK/*.spec ; do
             sed -e "s@^$nodup:@X$nodup:@" -e "0,/^X$nodup:/{s@^X$nodup:@$nodup:@}" -e "s@^X$nodup:.*@@" $TMPDIR/tmp.spec > $TMPDIR/tmp.spec.2 && mv $TMPDIR/tmp.spec.2 $TMPDIR/tmp.spec
         done
 
-	$RPMBUILD -bp $TMPDIR/tmp.spec >> $TMPDIR/sources 2>&1 || {
-	    $RPMBUILD -bp $TMPDIR/tmp.spec
+	$RPMBUILD --nodeps -bp $TMPDIR/tmp.spec >> $TMPDIR/sources 2>&1 || {
+	    $RPMBUILD --nodeps -bp $TMPDIR/tmp.spec
 	    cleanup_and_exit 1
 	}
 	egrep -v '^warning' $TMPDIR/sources > $TMPDIR/sources.t && mv $TMPDIR/sources.t $TMPDIR/sources
