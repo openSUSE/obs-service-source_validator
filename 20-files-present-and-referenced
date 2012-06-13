@@ -91,6 +91,7 @@ for i in $DIR_TO_CHECK/*.spec ; do
 		/^%py_r/{;p;d;}
 		/^%/{;s/.*//;q;}
 		/^Requires:/d
+		/^Requires(.*):/d
 		/^No[Ss]ource/d
 		/^NoPatch/d
 		/^BuildPrereq/d
