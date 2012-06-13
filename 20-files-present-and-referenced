@@ -52,6 +52,7 @@ for i in $DIR_TO_CHECK/*.spec ; do
 		}
 		/^%define/{;p;d;}
 		/^%nil/{;p;d;}
+		/^%{nil}/{;p;d;}
 		/^%global.*%(.*)/d
 		/^%global/{;p;d;}
 		/^%include/d
@@ -83,7 +84,6 @@ for i in $DIR_TO_CHECK/*.spec ; do
 		/^%else/{
 			s@.*@%endif\n%if 1@
 		}
-		/^%nil/{;p;d;}
 		/^%(.*)/{;d;}
 		/^%end/{;p;d;}
 		/^%bcond/{;p;d;}
