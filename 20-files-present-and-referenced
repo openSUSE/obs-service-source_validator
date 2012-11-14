@@ -302,6 +302,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	debian.preinst | \
 	debian.prerm | \
 	debian.rules | \
+	debian.series | \
 	debian.tar.gz | \
 	debian.triggers | \
 	debian.*.default | \
