@@ -29,6 +29,12 @@ test "$VERBOSE" = true && echo -n "- checking if needed files are present and no
 # first make my TMPDIR
 #
 export TMPDIR=`mktemp -d -t check_if_valid_source_dir-XXXXXX 2>/dev/null || mktemp -d /var/tmp/check_if_valid_source_dir-XXXXXX`
+
+test -n "$TMPDIR" -a -d "$TMPDIR" || {
+	echo "could not create TMPDIR, exiting"
+	exit 1
+}
+
 #
 # now create list of Sources.
 #
