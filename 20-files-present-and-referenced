@@ -52,6 +52,7 @@ for i in $DIR_TO_CHECK/*.spec ; do
 			s@%(rpm -q.*)@1@
 		}
 		/^%define/{;p;d;}
+		/^%undefine/{;p;d;}
 		/^%nil/{;p;d;}
 		/^%{nil}/{;p;d;}
 		/^%global.*%(.*)/d
