@@ -72,6 +72,7 @@ while (<>) {
 				$APPLIED[$arg] = $applied unless $APPLIED[$arg];
 			}
 		} elsif ($arg =~ /^([#\s]*)?%?patch[^-]/ || $arg =~ /^([#\s]*)?%?Patch[^-].*:.*/) {
+			unless ( /^\s*#patches/ ) {
 			$arg =~ s/^([#\s]*)?%?[Pp]atch//;
 			if ($arg =~ /^[0-9]/) {
 				$APPLIED[$arg] = $applied unless $APPLIED[$arg];
@@ -79,6 +80,7 @@ while (<>) {
 				print STDERR "$col_red(E) %patchZZZ without following numeric argument$col_norm\n";
 				print STDERR "line was $_\n" if $debug;
 				$errors++;
+			}
 			}
 		}
 	}
