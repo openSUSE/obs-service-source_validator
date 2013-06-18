@@ -179,6 +179,28 @@ for HASTOBETHER in `cat $TMPDIR/sources` ; do
 done
 
 #
+# Verify GPG keys
+#
+
+shopt -s failglob
+if echo $DIR_TO_CHECK/*keyring 2>/dev/null ; then 
+	shopt -u failglob
+	gpg --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --import $DIR_TO_CHECK/*.keyring
+	shopt -s nullglob
+	for i in $DIR_TO_CHECK/*.sig $DIR_TO_CHECK/*.asc $DIR_TO_CHECK/*.gpg ; do 
+		if [ -f "`basename $i`" ] ; then
+			gpg --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring "$i"  ||  {
+				echo "(E) signature $i does not validate"
+				RETURN=2
+			}
+		else
+			echo "(W) $i file found without a corresponding file to check for?"
+		fi
+	done
+	rm $TMPDIR/.checkifvalidsourcedir-gpg-keyring
+fi
+
+#
 # Skip this test for now, if we have server side downloads
 #
 if [ -e $DIR_TO_CHECK/_service ]; then
