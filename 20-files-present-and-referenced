@@ -187,15 +187,11 @@ if echo $DIR_TO_CHECK/*keyring 2>/dev/null ; then
 	shopt -u failglob
 	gpg --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --import $DIR_TO_CHECK/*.keyring
 	shopt -s nullglob
-	for i in $DIR_TO_CHECK/*.sig $DIR_TO_CHECK/*.asc $DIR_TO_CHECK/*.gpg ; do 
-		if [ -f "`basename $i`" ] ; then
-			gpg --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring "$i"  ||  {
-				echo "(E) signature $i does not validate"
-				RETURN=2
-			}
-		else
-			echo "(W) $i file found without a corresponding file to check for?"
-		fi
+	for i in $DIR_TO_CHECK/*.sig $DIR_TO_CHECK/*.asc ; do 
+		gpg --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring "$i"  ||  {
+			echo "(E) signature $i does not validate"
+			RETURN=2
+		}
 	done
 	rm $TMPDIR/.checkifvalidsourcedir-gpg-keyring
 fi
