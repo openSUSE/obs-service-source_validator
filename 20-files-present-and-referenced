@@ -195,12 +195,28 @@ if [ -f $DIR_TO_CHECK/*.keyring 2>/dev/null ]; then
     rm $TMPDIR/.checkifvalidsourcedir-gpg-keyring
 fi
 
-#
-# Skip this test for now, if we have server side downloads
-#
-if [ -e $DIR_TO_CHECK/_service ]; then
-    exit 0
+# XML validate files starting with _..
+if [ -x $(type -p xmllint) ]; then
+    for i in $DIR_TO_CHECK/_*; do
+        test -f $i || continue
+        xmllint --format $i >/dev/null || {
+            echo "(E) $(basename $i) is not valid XML"
+            RETURN=2
+        }
+    done
+
+    # Check if _service is sane
+    if [ -f $DIR_TO_CHECK/_service ]; then
+        xmllint --format $i > $TMPDIR/_service
+
+        if egrep -q "service .*mode=." $TMPDIR/_service \
+                && ! egrep -q "service .*mode=.(disabled|localrun)" \
+                $TMPDIR/_service; then
+            echo "(W) openSUSE: projects only allow 'disabled or 'localrun' services."
+        fi
+    fi
 fi
+
 
 #
 # now check if everything is marked in spec files.
