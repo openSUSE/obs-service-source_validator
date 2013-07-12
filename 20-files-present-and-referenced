@@ -195,12 +195,28 @@ if [ -f $DIR_TO_CHECK/*.keyring 2>/dev/null ]; then
     rm $TMPDIR/.checkifvalidsourcedir-gpg-keyring
 fi
 
-#
-# Skip this test for now, if we have server side downloads
-#
-if [ -e $DIR_TO_CHECK/_service ]; then
-    exit 0
+# XML validate files starting with _..
+if [ -x $(type -p xmllint) ]; then
+    for i in $DIR_TO_CHECK/_*; do
+        test -f $i || continue
+        xmllint --format $i >/dev/null || {
+            echo "(E) $(basename $i) is not valid XML"
+            RETURN=2
+        }
+    done
+
+    # Check if _service is sane
+    if [ -f $DIR_TO_CHECK/_service ]; then
+        xmllint --format $i > $TMPDIR/_service
+
+        if egrep -q "service .*mode=." $TMPDIR/_service \
+                && ! egrep -q "service .*mode=.(disabled|localrun)" \
+                $TMPDIR/_service; then
+            echo "(W) openSUSE: projects only allow 'disabled or 'localrun' services."
+        fi
+    fi
 fi
+
 
 #
 # now check if everything is marked in spec files.
@@ -337,31 +353,35 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	debian.*.prerm )
 	    ;;
 	*)
-	    grep -a -x $BASE $TMPDIR/sources > /dev/null && continue
+            grep -a -x $BASE $TMPDIR/sources > /dev/null && continue
+            test -f $DIR_TO_CHECK/_service && egrep -q 'mode=.remoterun' $DIR_TO_CHECK/_service && continue
+            # be a bit more relaxed for osc, it won't upload directories anyway
+            [ -d $DIR_TO_CHECK/$BASE ] && [ -d  $DIR_TO_CHECK/.osc ] && continue
+
 	    echo "(W) Attention, $BASE is not mentioned in spec files as source or patch."
-	    if test "$RETURN" != "2" ; then
-	      if [ -d $DIR_TO_CHECK/$BASE ] ; then
-                # be a bit more relaxed for osc, it won't upload directories anyway
-                if [ ! -d $DIR_TO_CHECK/.osc ] ; then
-		echo "!! $BASE is a directory !!"
-		    if test "$BATCHMODE" != true ; then
-		        echo    "     remove subtree with 'r'"
-		        echo    "ignore and continue with 'y'"
-		        echo -n "Is this correct? [N/y/r] "
-		        read ANSWER
-		        test "$ANSWER" = y -o "$ANSWER" = Y || {
-			# r for remove is also accepted, to make it compatible with osc itself
-		    	if test "$ANSWER" = d -o "$ANSWER" = D -o "$ANSWER" = r -o "$ANSWER" = R; then
-		    	    rm -Rfv $DIR_TO_CHECK/$BASE
-		    	else
-		    	    echo ok, please fix it...
-			    test "$RETURN" != "2" && RETURN=1
-		    	fi
-		        }
-		    else
-		        echo "###ASK -r $DIR_TO_CHECK/$BASE"
-		    fi
-		fi
+            if test "$RETURN" != "2" ; then
+                if [ -d $DIR_TO_CHECK/$BASE ] ; then
+                    # be a bit more relaxed for osc, it won't upload directories anyway
+                    if [ ! -d $DIR_TO_CHECK/.osc ] ; then
+                        echo "!! $BASE is a directory !!"
+                        if test "$BATCHMODE" != true ; then
+                            echo    "     remove subtree with 'r'"
+                            echo    "ignore and continue with 'y'"
+                            echo -n "Is this correct? [N/y/r] "
+                            read ANSWER
+                            test "$ANSWER" = y -o "$ANSWER" = Y || {
+                            # r for remove is also accepted, to make it compatible with osc itself
+                            if test "$ANSWER" = d -o "$ANSWER" = D -o "$ANSWER" = r -o "$ANSWER" = R; then
+                                rm -Rfv $DIR_TO_CHECK/$BASE
+                            else
+                                echo ok, please fix it...
+                                test "$RETURN" != "2" && RETURN=1
+                            fi
+                        }
+                    else
+                        echo "###ASK -r $DIR_TO_CHECK/$BASE"
+                    fi
+                fi
 	      else
 		if test "$BATCHMODE" != true ; then
 		    echo -n "Is this correct? [N/y/d] (y to ignore) "
