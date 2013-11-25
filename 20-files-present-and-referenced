@@ -357,6 +357,8 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
             test -f $DIR_TO_CHECK/_service && egrep -q 'mode=.remoterun' $DIR_TO_CHECK/_service && continue
             # be a bit more relaxed for osc, it won't upload directories anyway
             [ -d $DIR_TO_CHECK/$BASE ] && [ -d  $DIR_TO_CHECK/.osc ] && continue
+            # and source services on server side
+            [ -d $DIR_TO_CHECK/$BASE ] && [ -d $DIR_TO_CHECK/.old ] && continue
 
 	    echo "(W) Attention, $BASE is not mentioned in spec files as source or patch."
             if test "$RETURN" != "2" ; then
