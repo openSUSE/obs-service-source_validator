@@ -38,6 +38,9 @@ case $MY_ARCH in
   i386)
     MY_ARCH="%ix86"
     ;;
+  arm)
+    MY_ARCH="%arm"
+    ;;
 esac
 for i in $DIR_TO_CHECK/*.spec ; do
         test -f $i || continue
