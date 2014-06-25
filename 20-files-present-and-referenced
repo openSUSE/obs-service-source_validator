@@ -189,10 +189,42 @@ if [ -f $DIR_TO_CHECK/*.keyring 2>/dev/null ]; then
     gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --import $DIR_TO_CHECK/*.keyring
     for i in $DIR_TO_CHECK/*.sig $DIR_TO_CHECK/*.asc; do
         if [ -f "$i" ]; then
-            gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring "$i" || {
-                echo "(E) signature $i does not validate"
-                RETURN=2
-            }
+	    validatefn=${i/.asc}
+	    validatefn=${validatefn/.sig}
+	    if [ -f "$validatefn" ]; then
+                gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" || {
+                    echo "(E) signature $i does not validate"
+                    RETURN=2
+                }
+            else
+	        if [ -f "$validatefn.gz" ]; then
+		    TMPFILE=`mktemp`
+		    zcat "$validatefn.gz" > $TMPFILE
+                    gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" "$TMPFILE" || {
+                        echo "(E) signature $i does not validate"
+                        RETURN=2
+                    }
+		    rm $TMPFILE
+		fi
+	        if [ -f "$validatefn.bz2" ]; then
+		    TMPFILE=`mktemp`
+		    bzcat "$validatefn.bz2" > $TMPFILE
+                    gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" "$TMPFILE" || {
+                        echo "(E) signature $i does not validate"
+                        RETURN=2
+                    }
+		    rm $TMPFILE
+		fi
+	        if [ -f "$validatefn.xz" ]; then
+		    TMPFILE=`mktemp`
+		    xzcat "$validatefn.xz" > $TMPFILE
+                    gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" "$TMPFILE" || {
+                        echo "(E) signature $i does not validate"
+                        RETURN=2
+                    }
+		    rm $TMPFILE
+		fi
+	    fi
         fi
     done
     rm $TMPDIR/.checkifvalidsourcedir-gpg-keyring
