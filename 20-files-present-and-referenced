@@ -24,6 +24,13 @@ cleanup_and_exit () {
     exit $1
 }
 
+#
+# display a warning if the file is not in the spec file sources
+#
+warn_on_unmentioned_files () {
+  grep -a -x $1 $TMPDIR/sources > /dev/null || echo "(W) Attention, $1 is not mentioned in spec files as source or patch."
+}
+
 test "$VERBOSE" = true && echo -n "- checking if needed files are present and none stale "
 #
 # first make my TMPDIR
@@ -290,6 +297,11 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 		    echo "###ASK $DIR_TO_CHECK/$BASE"
 	    	fi
 	    fi
+            # we want baselibs.conf in the src.rpm
+            if test "$BASE" = baselibs.conf; then
+              warn_on_unmentioned_files $BASE
+            fi
+
 	    ;;
 	*rpmlintrc)
 	    if test -n "$DESTINATIONDIR" -a -f "$DESTINATIONDIR/$BASE" && cmp -s "$DIR_TO_CHECK/$BASE" "$DESTINATIONDIR/$BASE" ; then
@@ -314,6 +326,8 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 			echo "###ASK $DIR_TO_CHECK/$BASE"
 		fi
 	    fi
+            warn_on_unmentioned_files $BASE
+
 
 	    LINE=$(egrep "^[^#]*setBadness" "$DIR_TO_CHECK/$BASE")
 	    if [ "$LINE" != "" ]; then
@@ -395,7 +409,8 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
             # and source services on server side
             [ -d $DIR_TO_CHECK/$BASE ] && [ -d $DIR_TO_CHECK/.old ] && continue
 
-	    echo "(W) Attention, $BASE is not mentioned in spec files as source or patch."
+            warn_on_unmentioned_files $BASE
+
             if test "$RETURN" != "2" ; then
                 if [ -d $DIR_TO_CHECK/$BASE ] ; then
                     # be a bit more relaxed for osc, it won't upload directories anyway
