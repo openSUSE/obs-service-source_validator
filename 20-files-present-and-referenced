@@ -134,7 +134,7 @@ for i in $DIR_TO_CHECK/*.spec ; do
         echo "%description" >> $TMPDIR/tmp.spec
 
         # hack for really strange specfiles with more than one Name:/Release:/Version: line
-        for nodup in Name Version Release ; do
+        for nodup in Name Version Release Summary License ; do
             sed -e "s@^$nodup:@X$nodup:@" -e "0,/^X$nodup:/{s@^X$nodup:@$nodup:@}" -e "s@^X$nodup:.*@@" $TMPDIR/tmp.spec > $TMPDIR/tmp.spec.2 && mv $TMPDIR/tmp.spec.2 $TMPDIR/tmp.spec
         done
 
