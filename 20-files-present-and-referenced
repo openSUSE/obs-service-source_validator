@@ -149,6 +149,10 @@ for i in $DIR_TO_CHECK/*.spec ; do
 	}
 	egrep -v '^warning' $TMPDIR/sources > $TMPDIR/sources.t && mv $TMPDIR/sources.t $TMPDIR/sources
 done
+for i in $DIR_TO_CHECK/*.dsc ; do
+	test -f $i || continue
+	( sed -ne '/^Files:/,$p' < $i | sed -e 1d | sed -e '/^[^ ]/,$d' | while read debchk debsize debfile ; do echo $debfile ; done ) >> $TMPDIR/sources
+done
 
 test -f $TMPDIR/sources || cleanup_and_exit
 
