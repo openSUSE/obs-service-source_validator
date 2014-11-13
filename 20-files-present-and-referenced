@@ -202,13 +202,13 @@ done
 #
 
 if [ -f $DIR_TO_CHECK/*.keyring 2>/dev/null ]; then
-    gpg --pgp2 -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --import $DIR_TO_CHECK/*.keyring
+    gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --import $DIR_TO_CHECK/*.keyring
     for i in $DIR_TO_CHECK/*.sig $DIR_TO_CHECK/*.asc; do
         if [ -f "$i" ]; then
 	    validatefn=${i/.asc}
 	    validatefn=${validatefn/.sig}
 	    if [ -f "$validatefn" ]; then
-                gpg --pgp2 -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" || {
+                gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" || {
                     echo "(E) signature $i does not validate"
                     RETURN=2
                 }
@@ -216,7 +216,7 @@ if [ -f $DIR_TO_CHECK/*.keyring 2>/dev/null ]; then
 	        if [ -f "$validatefn.gz" ]; then
 		    TMPFILE=`mktemp`
 		    zcat "$validatefn.gz" > $TMPFILE
-                    gpg --pgp2 -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" "$TMPFILE" || {
+                    gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" "$TMPFILE" || {
                         echo "(E) signature $i does not validate"
                         RETURN=2
                     }
@@ -225,7 +225,7 @@ if [ -f $DIR_TO_CHECK/*.keyring 2>/dev/null ]; then
 	        if [ -f "$validatefn.bz2" ]; then
 		    TMPFILE=`mktemp`
 		    bzcat "$validatefn.bz2" > $TMPFILE
-                    gpg --pgp2 -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" "$TMPFILE" || {
+                    gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" "$TMPFILE" || {
                         echo "(E) signature $i does not validate"
                         RETURN=2
                     }
@@ -234,7 +234,7 @@ if [ -f $DIR_TO_CHECK/*.keyring 2>/dev/null ]; then
 	        if [ -f "$validatefn.xz" ]; then
 		    TMPFILE=`mktemp`
 		    xzcat "$validatefn.xz" > $TMPFILE
-                    gpg --pgp2 -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" "$TMPFILE" || {
+                    gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" "$TMPFILE" || {
                         echo "(E) signature $i does not validate"
                         RETURN=2
                     }
