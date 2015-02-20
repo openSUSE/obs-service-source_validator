@@ -174,6 +174,28 @@ for i in `cat $TMPDIR/sources` ; do
 done
 mv $TMPDIR/sources.t $TMPDIR/sources
 
+# XML validate files starting with _..
+if [ -x $(type -p xmllint) ]; then
+    # Check if _service is sane
+    if [ -f $DIR_TO_CHECK/_service ]; then
+        xmllint --format $i > $TMPDIR/_service
+
+        if egrep -q "service .*mode=." $TMPDIR/_service \
+                && ! egrep -q "service .*mode=.(disabled|localrun)" \
+                $TMPDIR/_service; then
+            echo "(W) openSUSE: projects only allow 'disabled or 'localrun' services."
+        fi
+    fi
+
+    for i in $DIR_TO_CHECK/_*; do
+        test -f $i || continue
+        xmllint --format $i >/dev/null || {
+            echo "(E) $(basename $i) is not valid XML"
+            RETURN=2
+        }
+    done
+fi
+
 check_tracked()
 {
 	local file=${1##*/}
@@ -246,29 +268,6 @@ if [ -f $DIR_TO_CHECK/*.keyring 2>/dev/null ]; then
     done
     rm $TMPDIR/.checkifvalidsourcedir-gpg-keyring
 fi
-
-# XML validate files starting with _..
-if [ -x $(type -p xmllint) ]; then
-    for i in $DIR_TO_CHECK/_*; do
-        test -f $i || continue
-        xmllint --format $i >/dev/null || {
-            echo "(E) $(basename $i) is not valid XML"
-            RETURN=2
-        }
-    done
-
-    # Check if _service is sane
-    if [ -f $DIR_TO_CHECK/_service ]; then
-        xmllint --format $i > $TMPDIR/_service
-
-        if egrep -q "service .*mode=." $TMPDIR/_service \
-                && ! egrep -q "service .*mode=.(disabled|localrun)" \
-                $TMPDIR/_service; then
-            echo "(W) openSUSE: projects only allow 'disabled or 'localrun' services."
-        fi
-    fi
-fi
-
 
 #
 # now check if everything is marked in spec files.
