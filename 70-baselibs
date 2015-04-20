@@ -1,0 +1,31 @@
+#!/bin/bash
+
+test "$1" = "--verbose" && { VERBOSE=true ; shift ; }
+test "$1" = "--batchmode" && { BATCHMODE=true ; shift ; }
+DIR_TO_CHECK=$1
+DESTINATIONDIR=$2
+test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
+test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+
+containsElement () {
+  local e
+  for e in "${@:2}"; do [[ "$e" == "$1" ]] && return 0; done
+  return 1
+}
+
+# PASS if there is no baselibs.conf
+[ -f $DIR_TO_CHECK/baselibs.conf ] || exit 0
+
+BUILTBINARIES=($(rpm -q --qf "%{name}\n" --specfile $DIR_TO_CHECK/*.spec))
+BASELIBSREF=$(grep "^\\S\+" $DIR_TO_CHECK/baselibs.conf)
+
+RETURN=0
+for rpm in $BASELIBSREF; do
+	if ! containsElement "$rpm" "${BUILTBINARIES[@]}"; then
+		echo "ERROR: '$rpm' referenced in baselibs.conf is not being built"
+		RETURN=1
+	fi
+done
+
+exit $RETURN
+
