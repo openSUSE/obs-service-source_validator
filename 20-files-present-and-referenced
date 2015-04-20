@@ -247,9 +247,9 @@ if [ -f $DIR_TO_CHECK/*.keyring 2>/dev/null ]; then
     rm $TMPDIR/.checkifvalidsourcedir-gpg-keyring
 fi
 
-# XML validate files starting with _..
+# XML validate some obs specific files
 if [ -x $(type -p xmllint) ]; then
-    for i in $DIR_TO_CHECK/_*; do
+    for i in $DIR_TO_CHECK/_{aggregate,link,meta,patchinfo,service}; do
         test -f $i || continue
         xmllint --format $i >/dev/null || {
             echo "(E) $(basename $i) is not valid XML"
