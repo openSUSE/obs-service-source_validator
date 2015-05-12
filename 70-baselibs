@@ -17,7 +17,9 @@ containsElement () {
 [ -f $DIR_TO_CHECK/baselibs.conf ] || exit 0
 
 BUILTBINARIES=($(rpm -q --qf "%{name}\n" --specfile $DIR_TO_CHECK/*.spec))
-BASELIBSREF=$(grep "^\\S\+" $DIR_TO_CHECK/baselibs.conf)
+# add 'targettype' as a 'known keyword' to not trip over it
+BUILTBINARIES+=('targettype')
+BASELIBSREF=$(grep -o "^\\S\+" $DIR_TO_CHECK/baselibs.conf)
 
 RETURN=0
 for rpm in $BASELIBSREF; do
