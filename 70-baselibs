@@ -16,8 +16,13 @@ containsElement () {
 # PASS if there is no baselibs.conf
 [ -f $DIR_TO_CHECK/baselibs.conf ] || exit 0
 
+# PASS if we have trouble parsing the .spec file
+rpm -q --specfile $DIR_TO_CHECK/*.spec >/dev/null 2>&1 || exit 0
+
 BUILTBINARIES=($(rpm -q --qf "%{name}\n" --specfile $DIR_TO_CHECK/*.spec))
-BASELIBSREF=$(grep "^\\S\+" $DIR_TO_CHECK/baselibs.conf)
+# add 'targettype' as a 'known keyword' to not trip over it
+BUILTBINARIES+=('targettype')
+BASELIBSREF=$(grep -o "^\\S\+" $DIR_TO_CHECK/baselibs.conf)
 
 RETURN=0
 for rpm in $BASELIBSREF; do
