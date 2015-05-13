@@ -178,7 +178,7 @@ mv $TMPDIR/sources.t $TMPDIR/sources
 if [ -x $(type -p xmllint) ]; then
     # Check if _service is sane
     if [ -f $DIR_TO_CHECK/_service ]; then
-        xmllint --format $i > $TMPDIR/_service
+        xmllint --format $DIR_TO_CHECK/_service > $TMPDIR/_service
 
         if egrep -q "service .*mode=." $TMPDIR/_service \
                 && ! egrep -q "service .*mode=.(disabled|localrun)" \
