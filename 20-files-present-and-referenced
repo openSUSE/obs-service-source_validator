@@ -176,23 +176,27 @@ mv $TMPDIR/sources.t $TMPDIR/sources
 
 # XML validate files starting with _..
 if [ -x $(type -p xmllint) ]; then
-    # Check if _service is sane
-    if [ -f $DIR_TO_CHECK/_service ]; then
-        xmllint --format $DIR_TO_CHECK/_service > $TMPDIR/_service
-
-        if egrep -q "service .*mode=." $TMPDIR/_service \
-                && ! egrep -q "service .*mode=.(disabled|localrun)" \
-                $TMPDIR/_service; then
-            echo "(W) openSUSE: projects only allow 'disabled or 'localrun' services."
-        fi
-    fi
-
     for i in $DIR_TO_CHECK/_*; do
         test -f $i || continue
+        BASE=${i##*/}
+
         xmllint --format $i >/dev/null || {
             echo "(E) $(basename $i) is not valid XML"
             RETURN=2
+            continue
         }
+
+        # Check if _service is sane
+        if [ "$BASE" = "_service" ]; then
+            xmllint --format $i > $TMPDIR/_service
+
+            if egrep -q "service .*mode=." $TMPDIR/_service \
+                    && ! egrep -q "service .*mode=.(disabled|localrun)" \
+                    $TMPDIR/_service; then
+                echo "(W) openSUSE: projects only allow 'disabled or 'localrun' services."
+            fi
+        fi
+
     done
 fi
 
