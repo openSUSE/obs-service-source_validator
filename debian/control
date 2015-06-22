@@ -1,0 +1,16 @@
+Source: obs-service-source-validator
+Maintainer: Hib Eris <hib@hiberis.nl>
+Section: devel
+Priority: extra
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.9.6
+Homepage: https://github.com/openSUSE/obs-service-source_validator
+
+Package: obs-service-source-validator
+Architecture: all
+Description: An OBS source service: running all the osc source-validator checks
+ This is a source service for openSUSE Build Service.
+ .
+ This service runs all checks as required by openSUSE:Factory project. This can be used
+ to guarantee that all checks succeed also on the service side. This plugin can be
+ used via project wide defined services.
