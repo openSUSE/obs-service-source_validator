@@ -232,10 +232,11 @@ fi
 
 if [ -f $DIR_TO_CHECK/*.keyring 2>/dev/null ]; then
     gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --import $DIR_TO_CHECK/*.keyring
-    for i in $DIR_TO_CHECK/*.sig $DIR_TO_CHECK/*.asc; do
+    for i in $DIR_TO_CHECK/*.sig $DIR_TO_CHECK/*.sign $DIR_TO_CHECK/*.asc; do
         if [ -f "$i" ]; then
-	    validatefn=${i/.asc}
-	    validatefn=${validatefn/.sig}
+	    validatefn=${i%.asc}
+	    validatefn=${validatefn%.sig}
+	    validatefn=${validatefn%.sign}
 	    if [ -f "$validatefn" ]; then
                 gpg -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --verify "$i" || {
                     echo "(E) signature $i does not validate"
