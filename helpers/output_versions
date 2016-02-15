@@ -1,5 +1,8 @@
 #!/usr/bin/perl
 
+use strict;
+use warnings;
+use POSIX;
 
 my $release = "stable";
 my $quiet = 0;
@@ -9,31 +12,30 @@ my $add_license = 0;
 my $debug = 0;
 my $dir_to_check;
 
-for (@ARGV) {
-	if ($_ eq "-q") {
+while ( my $opt = shift @ARGV) {
+	if ($opt eq "-q") {
 		$quiet = 1;
-	} elsif ($_ eq "-m") {
+	} elsif ($opt eq "-m") {
 		$quiet_mainpack = 1;
-	} elsif ($_ eq "-s") {
+	} elsif ($opt eq "-s") {
 		$quiet_specfile = 1;
-	} elsif ($_ eq "-l") {
+	} elsif ($opt eq "-l") {
 		$add_license = 1;
-	} elsif ($_ eq "-d") {
+	} elsif ($opt eq "-d") {
 		$debug = 1;
-	} elsif ($_ eq "-r") {
+	} elsif ($opt eq "-r") {
 		$release = shift @ARGV;
-		$release = `echo $release`;
+		$release = `echo "$release"`;
 		chomp ($release);
 	} else {
-		$dir_to_check = $_;
+		$dir_to_check = $opt;
 		last;
 	}
 }
 
 sub output_package ($$) {
 	my ($rel,$cpack) = @_;
-	my $datestr = `date "+%Y-%m-%d %H:%M:%S"`;
-	chomp ($datestr);
+	my $datestr = strftime("%Y-%m-%d %H:%M:%S",localtime());
 	print "$datestr $rel $cpack ";
 }
 
@@ -53,10 +55,6 @@ sub output_quiet ($$$$$$) {
 	print "\n";
 }
 
-my $current_package;
-my $current_package_license;
-my $package_version;
-my $main_package_name;
 my @specs;
 
 opendir (NEWD, "$dir_to_check");
@@ -66,10 +64,16 @@ for (readdir(NEWD)) {
 closedir (NEWD);
 
 for my $specfile (sort(@specs)) {
-	my $buildroot = 0;
-	$main_package_name = "";
-        undef $definelist;
-        undef $ifhandler;
+	my $buildroot 			= 0;
+	my $main_package_name 		= "";
+	my $definelist 			= {};
+	my $ifhandler  			= {};
+	my $package_name 		= undef;
+	my $main_package_version	= undef;
+	my $current_package;
+	my $current_package_license;
+	my $package_version;
+
 	open (SPEC,"$dir_to_check/$specfile");
 	my @SPEC = <SPEC>;
 	close (SPEC);

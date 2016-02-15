@@ -20,7 +20,9 @@ test -x /usr/bin/rpmbuild && RPMBUILD=rpmbuild
 #  cleanup_and_exit
 #
 cleanup_and_exit () {
-    rm -rf $TMPDIR
+    if [[ -n $TMPDIR ]];then
+    	rm -rf $TMPDIR
+    fi
     exit $1
 }
 
@@ -302,7 +304,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 		    read ANSWER
 		    test "$ANSWER" = y -o "$ANSWER" = Y || {
 			if test "$ANSWER" = d -o "$ANSWER" = D ; then
-			    rm -v $DIR_TO_CHECK/$BASE
+			    rm -v -- "$DIR_TO_CHECK/$BASE"
 			else
 			    echo ok, please fix it...
 			    test "$RETURN" != "2" && RETURN=1
@@ -331,7 +333,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 		    read ANSWER
 		    test "$ANSWER" = y -o "$ANSWER" = Y || {
 			if test "$ANSWER" = d -o "$ANSWER" = D ; then
-			    rm -v $DIR_TO_CHECK/$BASE
+			    rm -v -- "$DIR_TO_CHECK/$BASE"
 			else
 			    echo ok, please fix it...
 			    test "$RETURN" != "2" && RETURN=1
@@ -361,7 +363,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	    fi
 	    ;;
 	.*.spec)
-	    rm -v $DIR_TO_CHECK/$BASE
+	    rm -v -- "$DIR_TO_CHECK/$BASE"
 	    ;; 
 	*.changes | \
 	*.lsm | \
@@ -439,7 +441,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
                             test "$ANSWER" = y -o "$ANSWER" = Y || {
                             # r for remove is also accepted, to make it compatible with osc itself
                             if test "$ANSWER" = d -o "$ANSWER" = D -o "$ANSWER" = r -o "$ANSWER" = R; then
-                                rm -Rfv $DIR_TO_CHECK/$BASE
+                                rm -Rfv -- "$DIR_TO_CHECK/$BASE"
                             else
                                 echo ok, please fix it...
                                 test "$RETURN" != "2" && RETURN=1

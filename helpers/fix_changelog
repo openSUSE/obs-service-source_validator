@@ -23,12 +23,12 @@ if [ -n "$CHANGES_EXIST" ]; then
   for i in $DIR/*.changes ; do 
     test -f $i || continue
     echo "processing $i:"
-    /usr/lib/obs/service/source_validators/helpers/changelogfilter $i > $i.tmp
+    /usr/lib/obs/service/source_validators/helpers/changelogfilter "$i" > "$i.tmp"
     if test -s $i.tmp ; then
-    	mv $i.tmp $i
+    	mv -- "$i.tmp" "$i"
     else
         echo "fixup failed for $i"
-        rm -f $i.tmp
+        rm -f -- "$i.tmp"
     fi
   done
 else
