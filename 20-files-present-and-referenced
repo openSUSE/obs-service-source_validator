@@ -20,7 +20,7 @@ test -x /usr/bin/rpmbuild && RPMBUILD=rpmbuild
 #  cleanup_and_exit
 #
 cleanup_and_exit () {
-    if [[ -n $TMPDIR ]];then
+    if [ -n "$TMPDIR" ];then
     	rm -rf $TMPDIR
     fi
     exit $1
