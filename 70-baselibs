@@ -20,8 +20,8 @@ containsElement () {
 rpm -q --specfile $DIR_TO_CHECK/*.spec >/dev/null 2>&1 || exit 0
 
 BUILTBINARIES=($(rpm -q --qf "%{name}\n" --specfile $DIR_TO_CHECK/*.spec))
-# add 'targettype' as a 'known keyword' to not trip over it
-BUILTBINARIES+=('targettype' 'arch')
+# add known keywords from baselibs specification
+BUILTBINARIES+=('arch' 'targetname' 'targettype')
 BASELIBSREF=$(grep -o "^[a-zA-Z0-9.+_-]\+" $DIR_TO_CHECK/baselibs.conf)
 
 RETURN=0
