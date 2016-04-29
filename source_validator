@@ -21,6 +21,9 @@ done
 
 FILE="${PATH##*/}"
 
+HELPERS_DIR=/usr/lib/obs/service/source_validators/helpers
+$HELPERS_DIR/check_input_filename `pwd` || exit 1
+
 RETURN=0
 for i in /usr/lib/obs/service/source_validators/*; do
   if [ -f "$i" ]; then

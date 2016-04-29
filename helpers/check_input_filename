@@ -1,0 +1,17 @@
+#!/bin/bash
+
+TEST_DIR=$1
+
+INVALID_FILENAMES=0
+for ORG in $TEST_DIR/*
+do
+  NEW=$( echo "$ORG" | perl -pe 's/[\[\]\(\)\<\>\;\s\|\&]//g' )
+  if [ "$ORG" != "$NEW" ];then
+    echo "Invalid input file name found: '$ORG'"
+    INVALID_FILENAMES=$(( $INVALID_FILENAMES + 1 ))
+  fi
+done
+
+[ $INVALID_FILENAMES -gt 0 ] && exit 1
+
+exit 0

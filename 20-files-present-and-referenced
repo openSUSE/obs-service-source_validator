@@ -6,6 +6,8 @@ DIR_TO_CHECK=$1
 DESTINATIONDIR=$2
 OSC_MODE=""
 test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
+HELPERS_DIR="/usr/lib/obs/service/source_validators/helpers"
+$HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
 test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && {
 	DESTINATIONDIR="$DIR_TO_CHECK/.osc"
 	OSC_MODE="true"
@@ -52,7 +54,7 @@ case $MY_ARCH in
     ;;
 esac
 for i in $DIR_TO_CHECK/*.spec ; do
-        test -f $i || continue
+        test -f "$i" || continue
 	sed	'/^#%([^)]*$/,/^[^(]*)/d
 		/^#[^%]/d
 		/^#%(.*)/d
@@ -123,9 +125,9 @@ for i in $DIR_TO_CHECK/*.spec ; do
 		s/^Release:.*<RELEASE.*>/Release: 0/
 		s/^\(Release:.*\)<CI_CNT>\(.*\)/\1_\2/
 		s/^\(Release:.*\)<B_CNT>\(.*\)/\1_\2/' $i >$TMPDIR/tmp.spec
-	grep -a ^Icon: $i|sed -n 's/^Icon:[ 	]*/%{echo:/
+	grep -a ^Icon: "$i"|sed -n 's/^Icon:[ 	]*/%{echo:/
 		/^%{echo:/s/$/ }/p' >>$TMPDIR/tmp.spec
-	grep -a -q ^Release $i || {
+	grep -a -q ^Release "$i" || {
              sed -e "/^Version/{;p;s@\(.*\)@Release: 0\@;}" $TMPDIR/tmp.spec > $TMPDIR/tmp.spec.new
 	     mv $TMPDIR/tmp.spec.new $TMPDIR/tmp.spec
 	}
@@ -135,7 +137,7 @@ for i in $DIR_TO_CHECK/*.spec ; do
 	done
 	while read line ; do
 	    grep -qx "##seen $line" $TMPDIR/tmp.spec || echo "$line" | sed -e "s/^\(\([Ss]ource\|[Pp]atch\)[0-9]*:[    ]*\)\(.*\)/##seen \1\3\n%{echo:\3 }/" >> $TMPDIR/tmp.spec
-	done < <(grep -E "^Source:|^Source[0-9]*:|^Patch:|^Patch[0-9]*:" $i)
+	done < <(grep -E "^Source:|^Source[0-9]*:|^Patch:|^Patch[0-9]*:" "$i")
         echo "%description" >> $TMPDIR/tmp.spec
 
         # hack for really strange specfiles with more than one Name:/Release:/Version: line
@@ -155,8 +157,8 @@ for i in $DIR_TO_CHECK/*.spec ; do
 	egrep -v '^warning' $TMPDIR/sources > $TMPDIR/sources.t && mv $TMPDIR/sources.t $TMPDIR/sources
 done
 for i in $DIR_TO_CHECK/*.dsc ; do
-	test -f $i || continue
-	( sed -ne '/^Files:/,$p' < $i | sed -e 1d | sed -e '/^[^ ]/,$d' | while read debchk debsize debfile ; do echo $debfile ; done ) >> $TMPDIR/sources
+	test -f "$i" || continue
+	( sed -ne '/^Files:/,$p' < "$i" | sed -e 1d | sed -e '/^[^ ]/,$d' | while read debchk debsize debfile ; do echo $debfile ; done ) >> $TMPDIR/sources
 done
 
 test -f $TMPDIR/sources || cleanup_and_exit
