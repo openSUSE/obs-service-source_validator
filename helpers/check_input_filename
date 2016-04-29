@@ -5,7 +5,9 @@ TEST_DIR=$1
 INVALID_FILENAMES=0
 for ORG in $TEST_DIR/*
 do
-  NEW=$( echo "$ORG" | perl -pe 's/[\[\]\(\)\<\>\;\s\|\&]//g' )
+  NEW=$( echo "$ORG" | perl -pe 's/[\[\]\(\)\<\>\;\s\|\&\$]//g' )
+  # Avoid argument injection
+  NEW=$( echo "$NEW" | perl -pe 's/\/-//' )
   if [ "$ORG" != "$NEW" ];then
     echo "Invalid input file name found: '$ORG'"
     INVALID_FILENAMES=$(( $INVALID_FILENAMES + 1 ))
