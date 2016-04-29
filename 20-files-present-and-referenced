@@ -158,7 +158,7 @@ for i in $DIR_TO_CHECK/*.spec ; do
 done
 for i in $DIR_TO_CHECK/*.dsc ; do
 	test -f "$i" || continue
-	( sed -ne '/^Files:/,$p' < "$i" | sed -e 1d | sed -e '/^[^ ]/,$d' | while read debchk debsize debfile ; do echo $debfile ; done ) >> $TMPDIR/sources
+	( sed -ne '/^Files:/,$p' < "$i" | sed -e 1d | sed -e '/^[^ ]/,$d' | while read debchk debsize debfile ; do echo "$debfile" ; done ) >> $TMPDIR/sources
 done
 
 test -f $TMPDIR/sources || cleanup_and_exit
@@ -424,17 +424,17 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	debian.*.prerm )
 	    ;;
 	*)
-            grep -a -x $BASE $TMPDIR/sources > /dev/null && continue
+            grep -a -x "$BASE" $TMPDIR/sources > /dev/null && continue
             test -f $DIR_TO_CHECK/_service && egrep -q 'mode=.remoterun' $DIR_TO_CHECK/_service && continue
             # be a bit more relaxed for osc, it won't upload directories anyway
-            [ -d $DIR_TO_CHECK/$BASE ] && [ -d  $DIR_TO_CHECK/.osc ] && continue
+            [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d  $DIR_TO_CHECK/.osc ] && continue
             # and source services on server side
-            [ -d $DIR_TO_CHECK/$BASE ] && [ -d $DIR_TO_CHECK/.old ] && continue
+            [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d $DIR_TO_CHECK/.old ] && continue
 
             warn_on_unmentioned_files $BASE
 
             if test "$RETURN" != "2" ; then
-                if [ -d $DIR_TO_CHECK/$BASE ] ; then
+                if [ -d "$DIR_TO_CHECK/$BASE" ] ; then
                     # be a bit more relaxed for osc, it won't upload directories anyway
                     if [ ! -d $DIR_TO_CHECK/.osc ] ; then
                         echo "!! $BASE is a directory !!"
@@ -462,7 +462,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 		    read ANSWER
 		    test "$ANSWER" = y -o "$ANSWER" = Y || {
 			if test "$ANSWER" = d -o "$ANSWER" = D ; then
-			    rm -v $DIR_TO_CHECK/$BASE
+			    rm -v "$DIR_TO_CHECK/$BASE"
 			else
 			    echo ok, please fix it...
 			    test "$RETURN" != "2" && RETURN=1
