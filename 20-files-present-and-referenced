@@ -415,6 +415,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	debian.series | \
 	debian.tar.gz | \
 	debian.triggers | \
+	debian.format | \
 	debian.*.default | \
 	debian.*.dirs | \
 	debian.*.files | \
@@ -424,7 +425,8 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	debian.*.postinst | \
 	debian.*.postrm | \
 	debian.*.preinst | \
-	debian.*.prerm )
+	debian.*.prerm  | \
+	debian.*.lintian-overrides )
 	    ;;
 	*)
             grep -a -x "$BASE" $TMPDIR/sources > /dev/null && continue
