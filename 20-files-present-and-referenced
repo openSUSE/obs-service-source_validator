@@ -161,6 +161,9 @@ for i in $DIR_TO_CHECK/*.dsc ; do
 	( sed -ne '/^Files:/,$p' < "$i" | sed -e 1d | sed -e '/^[^ ]/,$d' | while read debchk debsize debfile ; do echo "$debfile" ; done ) >> $TMPDIR/sources
 done
 
+# Add debian only patches to the allowed sources list.
+test -f $DIR_TO_CHECK/debian.series && cat $DIR_TO_CHECK/debian.series | egrep -v -e '^$' -e '^ #' -e '^#'  >> $TMPDIR/sources
+
 test -f $TMPDIR/sources || cleanup_and_exit
 
 #
