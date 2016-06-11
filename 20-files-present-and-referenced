@@ -162,7 +162,7 @@ for i in $DIR_TO_CHECK/*.dsc ; do
 done
 
 # Add debian only patches to the allowed sources list.
-test -f $DIR_TO_CHECK/debian.series && cat $DIR_TO_CHECK/debian.series | egrep -v -e '^$' -e '^ #' -e '^#'  >> $TMPDIR/sources
+test -f $DIR_TO_CHECK/debian.series && egrep -v -e '^$' -e '^ #' -e '^#' $DIR_TO_CHECK/debian.series >> $TMPDIR/sources
 
 test -f $TMPDIR/sources || cleanup_and_exit
 
