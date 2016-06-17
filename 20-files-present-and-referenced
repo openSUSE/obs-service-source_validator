@@ -161,6 +161,9 @@ for i in $DIR_TO_CHECK/*.dsc ; do
 	( sed -ne '/^Files:/,$p' < "$i" | sed -e 1d | sed -e '/^[^ ]/,$d' | while read debchk debsize debfile ; do echo "$debfile" ; done ) >> $TMPDIR/sources
 done
 
+# Add debian only patches to the allowed sources list.
+test -f $DIR_TO_CHECK/debian.series && egrep -v -e '^$' -e '^ #' -e '^#' $DIR_TO_CHECK/debian.series >> $TMPDIR/sources
+
 test -f $TMPDIR/sources || cleanup_and_exit
 
 #
@@ -412,6 +415,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	debian.series | \
 	debian.tar.gz | \
 	debian.triggers | \
+	debian.format | \
 	debian.*.default | \
 	debian.*.dirs | \
 	debian.*.files | \
@@ -421,7 +425,8 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	debian.*.postinst | \
 	debian.*.postrm | \
 	debian.*.preinst | \
-	debian.*.prerm )
+	debian.*.prerm  | \
+	debian.*.lintian-overrides )
 	    ;;
 	*)
             grep -a -x "$BASE" $TMPDIR/sources > /dev/null && continue
