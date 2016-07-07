@@ -162,7 +162,10 @@ for i in $DIR_TO_CHECK/*.dsc ; do
 done
 
 # Add debian only patches to the allowed sources list.
-test -f $DIR_TO_CHECK/debian.series && egrep -v -e '^$' -e '^ #' -e '^#' $DIR_TO_CHECK/debian.series >> $TMPDIR/sources
+# but strip tailing -p1 arguments
+test -f $DIR_TO_CHECK/debian.series && \
+  sed -e '/^$/d' -e '/^#/d' -e 's,[ \t]*-p[0123456789]*$,,' \
+  $DIR_TO_CHECK/debian.series >> $TMPDIR/sources
 
 test -f $TMPDIR/sources || cleanup_and_exit
 
