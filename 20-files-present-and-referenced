@@ -154,7 +154,8 @@ for i in $DIR_TO_CHECK/*.spec ; do
 	    $RPMBUILD --nodeps -bp $TMPDIR/tmp.spec
 	    cleanup_and_exit 1
 	}
-	egrep -v '^warning' $TMPDIR/sources > $TMPDIR/sources.t && mv $TMPDIR/sources.t $TMPDIR/sources
+	egrep -v '^warning' $TMPDIR/sources > $TMPDIR/sources.t
+	test $? != 2 && mv $TMPDIR/sources.t $TMPDIR/sources
 done
 for i in $DIR_TO_CHECK/*.dsc ; do
 	test -f "$i" || continue
