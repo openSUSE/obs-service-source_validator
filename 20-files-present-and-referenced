@@ -204,9 +204,9 @@ if [ -x $(type -p xmllint) ]; then
             xmllint --format $i > $TMPDIR/_service
 
             if egrep -q "service .*mode=." $TMPDIR/_service \
-                    && ! egrep -q "service .*mode=.(disabled|localrun)" \
+                    && ! egrep -q "service .*mode=.(disabled|localrun|buildtime|explicit)" \
                     $TMPDIR/_service; then
-                echo "(W) openSUSE: projects only allow 'disabled or 'localrun' services."
+                echo "(W) openSUSE: projects only allow 'disabled', 'buildtime', 'explicit' or 'localrun' services."
             fi
         fi
 
@@ -217,10 +217,6 @@ check_tracked()
 {
 	local file=${1##*/}
 
-	if ! test -f "$DIR_TO_CHECK/$file"; then
-		echo "(E) $file mentioned in spec file does not exist."
-		return 1
-	fi
 	if test "$OSC_MODE" = "true" ; then
 		if test -f "$DESTINATIONDIR/$file"; then
 			return 0
@@ -229,6 +225,14 @@ check_tracked()
 			return 0
 		fi
 		echo "(E) $file mentioned in spec file is not tracked."
+		return 1
+	fi
+	if ! test -f "$DIR_TO_CHECK/$file"; then
+	        if test -f "$DIR_TO_CHECK/${file/\.tar\.*/}.obscpio"; then
+			# assume it will generated on builtime based of the archive
+			return 0
+		fi
+		echo "(E) $file mentioned in spec file does not exist."
 		return 1
 	fi
 }
@@ -399,6 +403,8 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	.check_if_valid_source_dir | \
 	.setup | \
 	*.dsc | \
+	*.obscpio | \
+	*.obsinfo | \
 	ready | \
 	_* | \
 	*.orig | \
