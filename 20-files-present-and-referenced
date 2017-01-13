@@ -221,6 +221,10 @@ check_tracked()
 		if test -f "$DESTINATIONDIR/$file"; then
 			return 0
 		fi
+	        if test -f "$DESTINATIONDIR/${file/\.tar\.*/}.obscpio"; then
+			# assume it will generated on builtime based of the archive
+			return 0
+		fi
 		if grep -qsFx "$file" "$DESTINATIONDIR/_to_be_added"; then
 			return 0
 		fi
