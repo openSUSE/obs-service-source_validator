@@ -1,0 +1,21 @@
+#!/bin/bash
+
+test "$1" = "--verbose" && { VERBOSE=true ; shift ; }
+test "$1" = "--batchmode" && { BATCHMODE=true ; shift ; }
+DIR_TO_CHECK=$1
+DESTINATIONDIR=$2
+test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
+HELPERS_DIR="/usr/lib/obs/service/source_validators/helpers"
+$HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
+test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+
+
+RETURN=0
+
+if [ -f "$DIR_TO_CHECK/_multibuild" -a $(ls -1 "$DIR_TO_CHECK/"*.spec | wc -l) -gt 1 ]; then
+	echo "ERROR: we support EITHER _multibuild OR multiple spec files. Do not add both"
+	RETURN=1
+fi
+
+exit $RETURN
+
