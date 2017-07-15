@@ -423,6 +423,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	debian.compat | \
 	debian.control | \
 	debian.copyright | \
+	debian.manpages | \
 	debian.postinst | \
 	debian.postrm | \
 	debian.preinst | \
@@ -438,6 +439,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	debian.*.init | \
 	debian.*.install | \
 	debian.*.logrotate | \
+	debian.*.manpages | \
 	debian.*.postinst | \
 	debian.*.postrm | \
 	debian.*.preinst | \
