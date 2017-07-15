@@ -117,6 +117,8 @@ for i in $DIR_TO_CHECK/*.spec ; do
 		/^Icon/d
 		/^Recommends/d
 		/^Supplements/d
+		/^Provides/d
+		/^Obsoletes/d
 		/^Suggests/d
 		/^Enhances/d
 		/^\([Ss]ource\|[Pp]atch\)[0-9]*:[ 	]*/{
