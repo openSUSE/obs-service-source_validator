@@ -254,7 +254,7 @@ fi
 #
 
 if [ -f $DIR_TO_CHECK/*.keyring 2>/dev/null ]; then
-    GPG_OPTIONS="-q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring"
+    GPG_OPTIONS="-q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --trust-model always"
     gpg $GPG_OPTIONS --import $DIR_TO_CHECK/*.keyring
     for i in $DIR_TO_CHECK/*.sig $DIR_TO_CHECK/*.sign $DIR_TO_CHECK/*.asc; do
         if [ -f "$i" ]; then
