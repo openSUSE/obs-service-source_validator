@@ -420,6 +420,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	.gitignore | \
 	.emacs.backup | \
 	PKGBUILD | \
+	appimage.yml | \
 	debian.changelog | \
 	debian.compat | \
 	debian.control | \
