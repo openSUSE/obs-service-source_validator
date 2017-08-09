@@ -53,111 +53,35 @@ case $MY_ARCH in
     MY_ARCH="%arm"
     ;;
 esac
+
+unique_sources() {
+	local TMP="$1"
+	rm -f "$TMP/unique.sed"
+	for i in "source" "patch"; do
+		grep -i -n "^$i[[:digit:]]*\s*:" "$2" | while IFS=" :" read N L; do
+			# the "i" flag is a GNU extension
+			echo "$N s/^$i/$i$N/i" >> "$TMP/unique.sed"
+		done
+	done
+	sed -f "$TMP/unique.sed" -i "$2"
+}
+
 for i in $DIR_TO_CHECK/*.spec ; do
         test -f "$i" || continue
-	sed	'/^#%([^)]*$/,/^[^(]*)/d
-		/^#[^%]/d
-		/^#%(.*)/d
-		/^%.*%(echo.*)/{;p;d;}
-		/^%.*%([^)]*)/{
-			s@%([^)]*)@1@
-		}
-		/^%define/{
-			s@%(rpm -q.*)@1@
-		}
-		/^%define/{;p;d;}
-		/^%undefine/{;p;d;}
-		/^%nil/{;p;d;}
-		/^%{nil}/{;p;d;}
-		/^%global.*%(.*)/d
-		/^%global/{;p;d;}
-		/^%include/d
-		/^%[a-z]*_requires/d
-		/^%{[a-z]*_requires}/d
-		/^%{[a-z]*_preserve_bytecode}/d
-		/^%gconf_schemas_prereq/d
-		/^%requires_eq/{;p;d;}
-		/^%requires_ge/{;p;d;}
-		/^%ifarch/{ 
-                        s@.*@%ifarch '$MY_ARCH'@
-                }
-		/^ExcludeArch:/d
-		/^%error/d
-		/^ExclusiveArch:/{
-			s@.*@ExclusiveArch: '$MY_ARCH'@
-		}
-		/^BuildArch.*:/{
-			s@.*@BuildArch: '$MY_ARCH'@
-		}
-		/^%if.*%{name}/{;p;d;}
-		/^%if[^a]/{ 
-                        s@.*@%if 1@
-                }
-		/^%if/{;p;d;}
-		/^%{\!/{;p;d;}
-		/^%{?/{;p;d;}
-		/^%{expand/d
-		/^%error/{;p;d;}
-		/^%else/{
-			s@.*@%endif\n%if 1@
-		}
-		/^%(.*)/{;d;}
-		/^%end/{;p;d;}
-		/^%bcond/{;p;d;}
-		/^%{py/{;p;d;}
-		/^%py_r/{;p;d;}
-		/^%/{;s/.*//;q;}
-		/^Requires:/d
-		/^Requires(.*):/d
-		/^No[Ss]ource/d
-		/^NoPatch/d
-		/^BuildPrereq/d
-		/^Build[Rr]equires/d
-		/^Pre[Rr]eq/d
-		/^Icon/d
-		/^Recommends/d
-		/^Supplements/d
-		/^Provides/d
-		/^Obsoletes/d
-		/^Suggests/d
-		/^Enhances/d
-		/^\([Ss]ource\|[Pp]atch\)[0-9]*:[ 	]*/{
-			s/^\(\([Ss]ource\|[Pp]atch\)[0-9]*:[ 	]*\)\(.*\)/##seen \1\3\n%{echo:\3 }/
-		}
-		s/^Release:.*<RELEASE.*>/Release: 0/
-		s/^\(Release:.*\)<CI_CNT>\(.*\)/\1_\2/
-		s/^\(Release:.*\)<B_CNT>\(.*\)/\1_\2/' $i >$TMPDIR/tmp.spec
-	grep -a ^Icon: "$i"|sed -n 's/^Icon:[ 	]*/%{echo:/
-		/^%{echo:/s/$/ }/p' >>$TMPDIR/tmp.spec
-	grep -a -q ^Release "$i" || {
-             sed -e "/^Version/{;p;s@\(.*\)@Release: 0\@;}" $TMPDIR/tmp.spec > $TMPDIR/tmp.spec.new
-	     mv $TMPDIR/tmp.spec.new $TMPDIR/tmp.spec
-	}
-	while test `grep -a "^%if" $TMPDIR/tmp.spec | wc -l` \
-		   -gt `grep -a "^%endif" $TMPDIR/tmp.spec | wc -l` ; do
-		echo "%endif" >> $TMPDIR/tmp.spec
-	done
-	while read line ; do
-	    grep -qx "##seen $line" $TMPDIR/tmp.spec || echo "$line" | sed -e "s/^\(\([Ss]ource\|[Pp]atch\)[0-9]*:[    ]*\)\(.*\)/##seen \1\3\n%{echo:\3 }/" >> $TMPDIR/tmp.spec
-	done < <(grep -E "^Source:|^Source[0-9]*:|^Patch:|^Patch[0-9]*:" "$i")
-        echo "%description" >> $TMPDIR/tmp.spec
+	sed -e 's/^\s*//' \
+	    -e '/^%if/d' \
+	    -e '/^%else/d' \
+	    -e '/^%endif/d' "$i" > "$TMPDIR/tmp.spec"
 
-        # hack for really strange specfiles with more than one Name:/Release:/Version: line
-        for nodup in Name Version Release Summary Group License ; do
-            sed -e "s@^$nodup:@X$nodup:@" -e "0,/^X$nodup:/{s@^X$nodup:@$nodup:@}" -e "s@^X$nodup:.*@@" $TMPDIR/tmp.spec > $TMPDIR/tmp.spec.2 && mv $TMPDIR/tmp.spec.2 $TMPDIR/tmp.spec
-	    grep -q "^$nodup:" $TMPDIR/tmp.spec || {
-		echo "$nodup: any" > $TMPDIR/tmp.spec.2
-		cat $TMPDIR/tmp.spec >> $TMPDIR/tmp.spec.2
-		mv $TMPDIR/tmp.spec.2 $TMPDIR/tmp.spec
-	    }
-        done
+	unique_sources "$TMPDIR" "$TMPDIR/tmp.spec"
 
-	$RPMBUILD --nodeps -bp $TMPDIR/tmp.spec >> $TMPDIR/sources 2>&1 || {
-	    $RPMBUILD --nodeps -bp $TMPDIR/tmp.spec
+	$HELPERS_DIR/spec_sources "$TMPDIR/tmp.spec" "$TMPDIR/sources" \
+	    2>"$TMPDIR/sources.err" || cleanup_and_exit 1
+	if [ -s "$TMPDIR/sources.err" ]; then
+	    echo "Unable to extract sources from spec - spec_sources failed:"
+	    cat "$TMPDIR/sources.err"
 	    cleanup_and_exit 1
-	}
-	egrep -v '^warning' $TMPDIR/sources > $TMPDIR/sources.t
-	test $? != 2 && mv $TMPDIR/sources.t $TMPDIR/sources
+	fi
 done
 for i in $DIR_TO_CHECK/*.dsc ; do
 	test -f "$i" || continue
@@ -176,13 +100,6 @@ test -f $TMPDIR/sources || cleanup_and_exit
 # check if all Sources, patches and the icon are present
 #
 touch $TMPDIR/sources.t
-grep -aq "command not found" $TMPDIR/sources && {
-	echo "$0 seems to have problems evaluating macros in specfile."
-	COMD=`grep -a "command not found" $TMPDIR/sources | head -n 1 | sed -e "s@.*: \([^:]*\): command not found@\1@"`
-	echo "command \"$COMD\" is not available used in the following defines:"
-	grep -a "%define.*$COMD" $DIR_TO_CHECK/*.spec
-	cleanup_and_exit 1
-}
 
 for i in `cat $TMPDIR/sources` ; do
 	echo "${i##*/}" >> $TMPDIR/sources.t
