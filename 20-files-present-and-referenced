@@ -77,6 +77,8 @@ for i in $DIR_TO_CHECK/*.spec ; do
 
 	$HELPERS_DIR/spec_sources "$TMPDIR/tmp.spec" "$TMPDIR/sources" \
 	    2>"$TMPDIR/sources.err" || cleanup_and_exit 1
+        # ignore expand errors with macro scripts
+	sed -i "/can't expand %\(...\)/d" "$TMPDIR/sources.err"
 	if [ -s "$TMPDIR/sources.err" ]; then
 	    echo "Unable to extract sources from spec - spec_sources failed:"
 	    cat "$TMPDIR/sources.err"
