@@ -15,8 +15,6 @@ test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && {
 
 
 RETURN=0
-RPMBUILD=rpm
-test -x /usr/bin/rpmbuild && RPMBUILD=rpmbuild
 
 #
 #  cleanup_and_exit
