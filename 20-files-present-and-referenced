@@ -54,33 +54,15 @@ case $MY_ARCH in
     ;;
 esac
 
-unique_sources() {
-	local TMP="$1"
-	rm -f "$TMP/unique.sed"
-	for i in "source" "patch"; do
-		grep -i -n "^$i[[:digit:]]*\s*:" "$2" | while IFS=" :" read N L; do
-			# the "i" flag is a GNU extension
-			echo "$N s/^$i/$i$N/i" >> "$TMP/unique.sed"
-		done
-	done
-	sed -f "$TMP/unique.sed" -i "$2"
-}
-
 for i in $DIR_TO_CHECK/*.spec ; do
         test -f "$i" || continue
-	sed -e 's/^\s*//' \
-	    -e '/^%if/d' \
-	    -e '/^%else/d' \
-	    -e '/^%endif/d' "$i" > "$TMPDIR/tmp.spec"
-
-	unique_sources "$TMPDIR" "$TMPDIR/tmp.spec"
-
-	$HELPERS_DIR/spec_sources "$TMPDIR/tmp.spec" "$TMPDIR/sources" \
-	    2>"$TMPDIR/sources.err" || cleanup_and_exit 1
+	$HELPERS_DIR/spec_query --specfile "$i" --print-sources \
+            --no-conditionals --unique-sources \
+            >> "$TMPDIR/sources" 2>"$TMPDIR/sources.err"
         # ignore expand errors with macro scripts
 	sed -i "/can't expand %\(...\)/d" "$TMPDIR/sources.err"
 	if [ -s "$TMPDIR/sources.err" ]; then
-	    echo "Unable to extract sources from spec - spec_sources failed:"
+	    echo "Unable to extract sources from spec - spec_query failed:"
 	    cat "$TMPDIR/sources.err"
 	    cleanup_and_exit 1
 	fi
