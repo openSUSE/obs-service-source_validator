@@ -58,7 +58,7 @@ for i in $DIR_TO_CHECK/*.spec ; do
             --no-conditionals --unique-sources \
             >> "$TMPDIR/sources" 2>"$TMPDIR/sources.err"
         # ignore expand errors with macro scripts
-	sed -i "/can't expand %\(...\)/d" "$TMPDIR/sources.err"
+	sed -i "/can't expand %(...)/d" "$TMPDIR/sources.err"
 	if [ -s "$TMPDIR/sources.err" ]; then
 	    echo "Unable to extract sources from spec - spec_query failed:"
 	    cat "$TMPDIR/sources.err"
