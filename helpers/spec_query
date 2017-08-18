@@ -1,0 +1,140 @@
+#!/usr/bin/perl
+
+BEGIN {
+  unshift @INC, '/usr/lib/build';
+}
+
+use strict;
+use warnings;
+
+use Build;
+use Build::Rpm;
+
+# Used by the 20-files-present-and-referenced and 70-baselibs scripts
+# to query certain information from the specfile.
+
+sub prepare_spec {
+  my ($fn, $no_conditionals, $unique_sources, $disambiguate_sources) = @_;
+  return $fn unless $no_conditionals;
+  my $spec;
+  open(F, '<', $fn) || die("open: $!\n");
+  my %seen;
+  my $dtags;
+  while (<F>) {
+    next if /^\s*%(?:if|else|endif)/;
+    chomp;
+    if (($unique_sources || $disambiguate_sources) &&
+        /^\s*((?:Source|Patch)\d*)\s*:(.*)$/i) {
+      my $tag = lc($1);
+      if ($seen{$tag}) {
+        push @$spec, "$tag: $2";
+        push @{$dtags->{$tag}}, \$spec->[-1];
+        next;
+      }
+      $seen{$tag} = 1;
+    }
+    push @$spec, $_;
+  }
+  close(F) || die("close: $!\n");
+  my @amb = sort(keys(%$dtags));
+  die('Ambiguous tags: ' . join(', ', @amb) . "\n") if $unique_sources && @amb;
+  return $spec unless $disambiguate_sources;
+  # make duplicate source/patch tags unique (such duplicates probably
+  # only occur in a "pathological" specfile...)
+  for my $tag (sort keys(%$dtags)) {
+    my $cnt = 0;
+    for my $lref (@{$dtags->{$tag}}) {
+      $cnt++ while ($seen{"$tag$cnt"});
+      $$lref =~ s/^$tag/$tag$cnt/;
+      $seen{"$tag$cnt"} = 1;
+    }
+  }
+  return $spec;
+}
+
+sub parse {
+  my ($fn, $arch, $no_conditionals, $unique_sources,
+      $disambiguate_sources) = @_;
+  my $spec = prepare_spec($fn, $no_conditionals, $unique_sources,
+                          $disambiguate_sources);
+  my $config = Build::read_config($arch, []);
+  $config->{'warnings'} = 1;
+  my $descr = Build::Rpm::parse($config, $spec);
+  die("unable to parse specfile: $fn\n") unless $descr;
+  my @skeys = sort keys(%$descr);
+  $descr->{'sources'} = [map {$descr->{$_}} grep {/^source/} @skeys];
+  $descr->{'patches'} = [map {$descr->{$_}} grep {/^patch/} @skeys];
+  $descr->{'icons'} = [map {@{$descr->{$_}}} grep {/^icon/} @skeys];
+  return $descr;
+}
+
+sub print_subpacks {
+  my ($descr) = @_;
+  print "@{$descr->{'subpacks'} || []} ";
+  print "\n";
+}
+
+sub print_sources {
+  my ($descr) = @_;
+  print "@{$descr->{'sources'}} " if @{$descr->{'sources'}};
+  print "@{$descr->{'patches'}} " if @{$descr->{'patches'}};
+  print "@{$descr->{'icons'}}" if @{$descr->{'icons'}};
+  print "\n";
+}
+
+sub usage {
+  my ($ret) = @_;
+  print <<EOF;
+Usage: $0 --specfile <specfile> [<options>]
+Options:
+  --specfile <specfile>:  the specfile that should be queried
+  --arch <arch>:          arch that is used during parsing (default: noarch)
+  --no-conditionals:      do not take %if* conditionals into account during
+                          parsing
+  --unique-sources:       fail if source/patch tags are not unique
+  --disambiguate-sources: disambiguate non-unique source/patch tags (only
+                          needed for a "pathological" specfile)
+  --print-subpacks:       print names of the main package and all subpackages
+  --print-sources:        print names of all sources, patches, and icons
+
+EOF
+  exit($ret);
+}
+
+my $specfile;
+my $arch = 'noarch';
+my $print_subpacks;
+my $print_sources;
+my $no_conditionals;
+my $unique_sources;
+my $disambiguate_sources;
+
+while (@ARGV) {
+  my $opt = shift @ARGV;
+  if ($opt eq '--specfile') {
+    $specfile = shift @ARGV;
+    usage(1) unless $specfile;
+  } elsif ($opt eq '--arch') {
+    $arch = shift @ARGV;
+    usage(1) unless $arch;
+  } elsif ($opt eq '--print-subpacks') {
+    $print_subpacks = 1;
+  } elsif ($opt eq '--print-sources') {
+    $print_sources = 1;
+  } elsif ($opt eq '--no-conditionals') {
+    $no_conditionals = 1;
+  } elsif ($opt eq '--unique-sources') {
+    $unique_sources = 1;
+  } elsif ($opt eq '--disambiguate-sources') {
+    $disambiguate_sources = 1;
+  } elsif ($opt eq '--help') {
+    usage(0);
+  } else {
+    usage(1);
+  }
+}
+
+my $descr = parse($specfile, $arch, $no_conditionals, $unique_sources,
+                  $disambiguate_sources);
+print_subpacks($descr) if $print_subpacks;
+print_sources($descr) if $print_sources;

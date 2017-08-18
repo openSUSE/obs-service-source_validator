@@ -18,10 +18,12 @@ containsElement () {
 # PASS if there is no baselibs.conf
 [ -f $DIR_TO_CHECK/baselibs.conf ] || exit 0
 
-# PASS if we have trouble parsing the .spec file
-rpm -q --specfile $DIR_TO_CHECK/*.spec >/dev/null 2>&1 || exit 0
-
-BUILTBINARIES=($(rpm -q --qf "%{name}\n" --specfile $DIR_TO_CHECK/*.spec))
+BUILTBINARIES=()
+for i in "$DIR_TO_CHECK"/*.spec; do
+	# PASS if we have trouble parsing the .spec file
+	BUILTBINARIES+=($($HELPERS_DIR/spec_query --specfile "$i" --print-subpacks \
+	    --no-conditionals --unique-sources)) || exit 0
+done
 # add known keywords from baselibs specification
 BUILTBINARIES+=('arch' 'targetname' 'targettype')
 BASELIBSREF=$(grep -o "^[a-zA-Z0-9.+_-]\+" $DIR_TO_CHECK/baselibs.conf)
