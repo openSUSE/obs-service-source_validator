@@ -72,6 +72,10 @@ for my $specfile (sort(@specs)) {
 	my $current_package;
 	my $current_package_license;
 	my $package_version;
+        $definelist->{"%nil"} = "";
+        $definelist->{"%{nil}"} = "";
+        $definelist->{"%flavor"} = "";
+        $definelist->{"%{flavor}"} = "";
 
 	open (SPEC,"$dir_to_check/$specfile");
 	my @SPEC = <SPEC>;
@@ -98,6 +102,7 @@ for my $specfile (sort(@specs)) {
 			|| ($args[1] && !$args[3] && !$if_not && $definelist->{$args[1]} eq "0")
 			|| ($args[2] eq "==" && $args[3] ne "0" && $definelist->{$args[1]} eq "0")
 			|| ($args[2] eq "!=" && $args[3] eq "0" && $definelist->{$args[1]} eq "0")
+			|| ($args[2] eq "!=" && $args[3] eq "" && $definelist->{$args[1]} eq "")
 			|| ($args[1] && !$args[3] && $if_not && $definelist->{$args[1]} eq "1")
 			|| ($args[1] && $args[2] eq "!=" && $args[3] eq "1" && $definelist->{$args[1]} eq "1") ) {
 			$ifhandler->{"disabled"} = $ifhandler->{"depth"};
