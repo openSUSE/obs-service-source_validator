@@ -74,8 +74,6 @@ for my $specfile (sort(@specs)) {
 	my $package_version;
         $definelist->{"%nil"} = "";
         $definelist->{"%{nil}"} = "";
-        $definelist->{"%flavor"} = "";
-        $definelist->{"%{flavor}"} = "";
 
 	open (SPEC,"$dir_to_check/$specfile");
 	my @SPEC = <SPEC>;
