@@ -12,7 +12,15 @@ test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_
 
 RETURN=0
 test "$VERBOSE" = true && echo -n "- checking for stale or missing changes "
-SPECLIST=`/usr/lib/obs/service/source_validators/helpers/output_versions -q -m $DIR_TO_CHECK | sed -e "s@ .*@@" | sort -u`
+
+print_specs () {
+for i in "$DIR_TO_CHECK"/*.spec; do
+        # PASS if we have trouble parsing the .spec file
+        $HELPERS_DIR/spec_query --specfile "$i" --print-subpacks | sed -e "s@ .*@@"
+done
+}
+
+SPECLIST=`print_specs | sort -u`
 
 test -n "$SPECLIST" && {
 for i in $SPECLIST ; do
