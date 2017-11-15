@@ -14,14 +14,17 @@ use Build::Rpm;
 # to query certain information from the specfile.
 
 sub prepare_spec {
-  my ($fn, $no_conditionals, $unique_sources, $disambiguate_sources) = @_;
+  my ($fn, $no_conditionals, $keep_name_conditionals, $unique_sources,
+      $disambiguate_sources) = @_;
   return $fn unless $no_conditionals;
   my $spec;
   open(F, '<', $fn) || die("open: $!\n");
   my %seen;
   my $dtags;
   while (<F>) {
-    next if /^\s*%(?:if|else|endif)/;
+    if (/^\s*%(?:if|else|endif)/) {
+      next unless $keep_name_conditionals && /^\s*%if\s+.*%\{?name/;
+    }
     chomp;
     if (($unique_sources || $disambiguate_sources) &&
         /^\s*((?:Source|Patch)\d*)\s*:(.*)$/i) {
@@ -53,10 +56,10 @@ sub prepare_spec {
 }
 
 sub parse {
-  my ($fn, $arch, $no_conditionals, $unique_sources,
+  my ($fn, $arch, $no_conditionals, $keep_name_conditionals, $unique_sources,
       $disambiguate_sources) = @_;
-  my $spec = prepare_spec($fn, $no_conditionals, $unique_sources,
-                          $disambiguate_sources);
+  my $spec = prepare_spec($fn, $no_conditionals, $keep_name_conditionals,
+                          $unique_sources, $disambiguate_sources);
   my $config = Build::read_config($arch, []);
   $config->{'warnings'} = 1;
   my $descr = Build::Rpm::parse($config, $spec);
@@ -87,15 +90,18 @@ sub usage {
   print <<EOF;
 Usage: $0 --specfile <specfile> [<options>]
 Options:
-  --specfile <specfile>:  the specfile that should be queried
-  --arch <arch>:          arch that is used during parsing (default: noarch)
-  --no-conditionals:      do not take %if* conditionals into account during
-                          parsing
-  --unique-sources:       fail if source/patch tags are not unique
-  --disambiguate-sources: disambiguate non-unique source/patch tags (only
-                          needed for a "pathological" specfile)
-  --print-subpacks:       print names of the main package and all subpackages
-  --print-sources:        print names of all sources, patches, and icons
+  --specfile <specfile>:    the specfile that should be queried
+  --arch <arch>:            arch that is used during parsing (default: noarch)
+  --no-conditionals:        do not take %if* conditionals into account during
+                            parsing
+  --keep-name-conditionals: take conditionals of the form "%if ... %{name} ..."
+                            into account (only useful to restrict the
+                            --no-conditionals option)
+  --unique-sources:         fail if source/patch tags are not unique
+  --disambiguate-sources:   disambiguate non-unique source/patch tags (only
+                            needed for a "pathological" specfile)
+  --print-subpacks:         print names of the main package and all subpackages
+  --print-sources:          print names of all sources, patches, and icons
 
 EOF
   exit($ret);
@@ -106,6 +112,7 @@ my $arch = 'noarch';
 my $print_subpacks;
 my $print_sources;
 my $no_conditionals;
+my $keep_name_conditionals;
 my $unique_sources;
 my $disambiguate_sources;
 
@@ -123,6 +130,8 @@ while (@ARGV) {
     $print_sources = 1;
   } elsif ($opt eq '--no-conditionals') {
     $no_conditionals = 1;
+  } elsif ($opt eq '--keep-name-conditionals') {
+    $keep_name_conditionals = 1;
   } elsif ($opt eq '--unique-sources') {
     $unique_sources = 1;
   } elsif ($opt eq '--disambiguate-sources') {
@@ -134,7 +143,7 @@ while (@ARGV) {
   }
 }
 
-my $descr = parse($specfile, $arch, $no_conditionals, $unique_sources,
-                  $disambiguate_sources);
+my $descr = parse($specfile, $arch, $no_conditionals, $keep_name_conditionals,
+                  $unique_sources, $disambiguate_sources);
 print_subpacks($descr) if $print_subpacks;
 print_sources($descr) if $print_sources;
