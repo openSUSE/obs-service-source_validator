@@ -55,7 +55,7 @@ esac
 for i in $DIR_TO_CHECK/*.spec ; do
         test -f "$i" || continue
 	$HELPERS_DIR/spec_query --specfile "$i" --print-sources \
-            --no-conditionals --unique-sources \
+            --no-conditionals --keep-name-conditionals --disambiguate-sources \
             >> "$TMPDIR/sources" 2>"$TMPDIR/sources.err"
         # ignore expand errors with macro scripts
 	sed -i "/can't expand %(...)/d" "$TMPDIR/sources.err"
