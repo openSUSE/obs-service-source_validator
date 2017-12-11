@@ -1,0 +1,12 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+BEGIN { unshift(@::INC,'/usr/lib/obs/service/source_validators/helpers/') }
+
+use DebianSourceChangesValidator;
+
+my $ev = DebianSourceChangesValidator::validate($ARGV[0]);
+
+exit $ev;

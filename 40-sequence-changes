@@ -15,6 +15,10 @@ FIRST_CHANGES=""
 RETURN=0
 for i in $DIR_TO_CHECK/*.changes ; do
     test -f $i || continue
+    if [ $i != ${i%_source.changes} ];then
+      /usr/lib/obs/service/source_validators/helpers/check_debian_source_changes $i && continue
+      echo "(W) File ends with '_source.changes' but is not a valid debian source changes file"
+    fi
     RETURN=0
     test -n "$FIRST_CHANGES" || FIRST_CHANGES=$i
     if test -n "$FIRST_CHANGES" -a "$FIRST_CHANGES" != "$i" ; then
