@@ -13,6 +13,9 @@ use Build::Rpm;
 # Used by the 20-files-present-and-referenced and 70-baselibs scripts
 # to query certain information from the specfile.
 
+our $st_if = 1;
+our $st_ifname = 2;
+
 sub prepare_spec {
   my ($fn, $no_conditionals, $keep_name_conditionals, $unique_sources,
       $disambiguate_sources) = @_;
@@ -21,9 +24,25 @@ sub prepare_spec {
   open(F, '<', $fn) || die("open: $!\n");
   my %seen;
   my $dtags;
+  my @ifs;
   while (<F>) {
-    if (/^\s*%(?:if|else|endif)/) {
-      next unless $keep_name_conditionals && /^\s*%if\s+.*%\{?name/;
+    if (/^\s*%if\s+.*%\{?name/ && $keep_name_conditionals) {
+      unshift @ifs, $st_ifname;
+    } elsif (/^\s*%if/) {
+      unshift @ifs, $st_if;
+      next;
+    } elsif (/^\s*%else/) {
+      die("got %else without %if\n") unless @ifs;
+      if ($ifs[0] == $st_ifname) {
+        push @$spec, "%endif";
+        $ifs[0] = $st_if;
+      }
+      next;
+    } elsif (/^\s*%endif/) {
+      die("got %endif without %if\n") unless @ifs;
+      push @$spec, "%endif" if $ifs[0] == $st_ifname;
+      shift @ifs;
+      next;
     }
     chomp;
     if (($unique_sources || $disambiguate_sources) &&
@@ -38,6 +57,7 @@ sub prepare_spec {
     }
     push @$spec, $_;
   }
+  die("got %if without %endif\n") if @ifs;
   close(F) || die("close: $!\n");
   my @amb = sort(keys(%$dtags));
   die('Ambiguous tags: ' . join(', ', @amb) . "\n") if $unique_sources && @amb;
