@@ -26,23 +26,26 @@ sub prepare_spec {
   my $dtags;
   my @ifs;
   while (<F>) {
-    if (/^\s*%if\s+.*%\{?name/ && $keep_name_conditionals) {
-      unshift @ifs, $st_ifname;
-    } elsif (/^\s*%if/) {
-      unshift @ifs, $st_if;
-      next;
-    } elsif (/^\s*%else/) {
-      die("got %else without %if\n") unless @ifs;
-      if ($ifs[0] == $st_ifname) {
-        push @$spec, "%endif";
-        $ifs[0] = $st_if;
+    unless (/\\$/) {
+      # only process if conditionals in non line continuation contexts
+      if (/^\s*%if\s+.*%\{?name/ && $keep_name_conditionals) {
+        unshift @ifs, $st_ifname;
+      } elsif (/^\s*%if/) {
+        unshift @ifs, $st_if;
+        next;
+      } elsif (/^\s*%else/) {
+        die("got %else without %if\n") unless @ifs;
+        if ($ifs[0] == $st_ifname) {
+          push @$spec, "%endif";
+          $ifs[0] = $st_if;
+        }
+        next;
+      } elsif (/^\s*%endif/) {
+        die("got %endif without %if\n") unless @ifs;
+        push @$spec, "%endif" if $ifs[0] == $st_ifname;
+        shift @ifs;
+        next;
       }
-      next;
-    } elsif (/^\s*%endif/) {
-      die("got %endif without %if\n") unless @ifs;
-      push @$spec, "%endif" if $ifs[0] == $st_ifname;
-      shift @ifs;
-      next;
     }
     chomp;
     if (($unique_sources || $disambiguate_sources) &&
@@ -113,7 +116,8 @@ Options:
   --specfile <specfile>:    the specfile that should be queried
   --arch <arch>:            arch that is used during parsing (default: noarch)
   --no-conditionals:        do not take %if* conditionals into account during
-                            parsing
+                            parsing (except if they are used in line
+                            continuation contexts)
   --keep-name-conditionals: take conditionals of the form "%if ... %{name} ..."
                             into account (only useful to restrict the
                             --no-conditionals option)
