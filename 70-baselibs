@@ -22,7 +22,7 @@ BUILTBINARIES=()
 for i in "$DIR_TO_CHECK"/*.spec; do
 	# PASS if we have trouble parsing the .spec file
 	BUILTBINARIES+=($($HELPERS_DIR/spec_query --specfile "$i" --print-subpacks \
-	    --no-conditionals --unique-sources)) || exit 0
+	    --no-conditionals)) || exit 0
 done
 # add known keywords from baselibs specification
 BUILTBINARIES+=('arch' 'targetname' 'targettype')
