@@ -25,4 +25,12 @@ package:
 	@./mktar
 	@mv *bz2 $(PKG)
 
-.PHONY: all install package
+test:
+	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/github_issue_64.spec
+	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/python-libmount.spec
+	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/util-linux.spec
+	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/util-linux-systemd.spec
+	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/coreutils-testsuite.spec
+	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/coreutils.spec
+
+.PHONY: all install package test
