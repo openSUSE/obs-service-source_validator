@@ -41,11 +41,6 @@ sub prepare_spec {
         }
         next;
       } elsif (/^\s*%endif/) {
-        if (@$spec && $spec->[-1] =~ /\\$/) {
-          # keep %endif if it ends a line continuation
-          push @$spec, $_;
-          next;
-        }
         die("got %endif without %if\n") unless @ifs;
         push @$spec, "%endif" if $ifs[0] == $st_ifname;
         shift @ifs;
