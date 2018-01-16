@@ -25,32 +25,34 @@ sub prepare_spec {
   my %seen;
   my $dtags;
   my @ifs;
+  my $start_cont;
   while (<F>) {
-    unless (/\\$/) {
-      # only process if conditionals in non line continuation contexts
-      if (/^\s*%if\s+.*%\{?name/ && $keep_name_conditionals) {
-        unshift @ifs, $st_ifname;
-      } elsif (/^\s*%if/) {
-        unshift @ifs, $st_if;
+    # only process if conditionals in non line continuation contexts
+    if (/^\s*%if\s+.*%\{?name/ && $keep_name_conditionals) {
+      $start_cont = 1 if (/\\$/);
+      unshift @ifs, $st_ifname;
+    } elsif (/^\s*%if/) {
+      $start_cont = 0 unless (/\\$/);
+      unshift @ifs, $st_if;
         next;
-      } elsif (/^\s*%else/) {
-        die("got %else without %if\n") unless @ifs;
-        if ($ifs[0] == $st_ifname) {
-          push @$spec, "%endif";
-          $ifs[0] = $st_if;
-        }
-        next;
-      } elsif (/^\s*%endif/) {
-        if (@$spec && $spec->[-1] =~ /\\$/) {
-          # keep %endif if it ends a line continuation
-          push @$spec, $_;
-          next;
-        }
-        die("got %endif without %if\n") unless @ifs;
-        push @$spec, "%endif" if $ifs[0] == $st_ifname;
-        shift @ifs;
+    } elsif (/^\s*%else/) {
+      $start_cont = 0 unless (/\\$/);
+      die("got %else without %if\n") unless @ifs;
+      if ($ifs[0] == $st_ifname) {
+        push @$spec, "%endif";
+        $ifs[0] = $st_if;
+      }
+      next;
+    } elsif (/^\s*%endif/) {
+      if ( $start_cont) {
+        # keep %endif if it ends a line continuation
+        push @$spec, $_;
         next;
       }
+      die("got %endif without %if\n") unless @ifs;
+      push @$spec, "%endif" if $ifs[0] == $st_ifname;
+      shift @ifs;
+      next;
     }
     chomp;
     if (($unique_sources || $disambiguate_sources) &&
@@ -64,6 +66,7 @@ sub prepare_spec {
       $seen{$tag} = 1;
     }
     push @$spec, $_;
+    $start_cont = 0;
   }
   die("got %if without %endif\n") if @ifs;
   close(F) || die("close: $!\n");
