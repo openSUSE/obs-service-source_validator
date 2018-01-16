@@ -32,5 +32,5 @@ test:
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/util-linux-systemd.spec
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/coreutils-testsuite.spec
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/coreutils.spec
-	
+
 .PHONY: all install package test
