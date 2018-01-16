@@ -25,4 +25,7 @@ package:
 	@./mktar
 	@mv *bz2 $(PKG)
 
-.PHONY: all install package
+test:
+	./helpers/spec_query --specfile t/data/64.spec --no-conditionals --keep-name-conditionals
+	
+.PHONY: all install package test
