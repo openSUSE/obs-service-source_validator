@@ -25,18 +25,25 @@ sub prepare_spec {
   my %seen;
   my $dtags;
   my @ifs;
-  my $start_cont;
   while (<F>) {
     # only process if conditionals in non line continuation contexts
+    if (/^\s*%(?:define|global).*\\$/) {
+      push @$spec, $_;
+      # filter all lines of continuation
+      my $ll;
+      while ( $ll = <F> ) {
+        push @$spec, $ll;
+        last unless ($ll =~ /\\$/);
+      }
+      next;
+    }
+
     if (/^\s*%if\s+.*%\{?name/ && $keep_name_conditionals) {
-      $start_cont = 1 if (/\\$/);
       unshift @ifs, $st_ifname;
     } elsif (/^\s*%if/) {
-      $start_cont = 0 unless (/\\$/);
       unshift @ifs, $st_if;
-        next;
+      next;
     } elsif (/^\s*%else/) {
-      $start_cont = 0 unless (/\\$/);
       die("got %else without %if\n") unless @ifs;
       if ($ifs[0] == $st_ifname) {
         push @$spec, "%endif";
@@ -44,16 +51,12 @@ sub prepare_spec {
       }
       next;
     } elsif (/^\s*%endif/) {
-      if ( $start_cont) {
-        # keep %endif if it ends a line continuation
-        push @$spec, $_;
-        next;
-      }
       die("got %endif without %if\n") unless @ifs;
       push @$spec, "%endif" if $ifs[0] == $st_ifname;
       shift @ifs;
       next;
     }
+
     chomp;
     if (($unique_sources || $disambiguate_sources) &&
         /^\s*((?:Source|Patch)\d*)\s*:(.*)$/i) {
@@ -66,7 +69,6 @@ sub prepare_spec {
       $seen{$tag} = 1;
     }
     push @$spec, $_;
-    $start_cont = 0;
   }
   die("got %if without %endif\n") if @ifs;
   close(F) || die("close: $!\n");
@@ -92,7 +94,6 @@ sub parse {
   my $spec = prepare_spec($fn, $no_conditionals, $keep_name_conditionals,
                           $unique_sources, $disambiguate_sources);
   my $config = Build::read_config($arch, []);
-  $config->{'warnings'} = 1;
   my $descr = Build::Rpm::parse($config, $spec);
   die("unable to parse specfile: $fn\n") unless $descr;
   my @skeys = sort keys(%$descr);
