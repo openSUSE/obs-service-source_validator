@@ -32,5 +32,8 @@ test:
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/util-linux-systemd.spec
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/coreutils-testsuite.spec
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/coreutils.spec
+	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/continue-line.spec
+	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/cross-aarch64-gcc7.spec
+
 
 .PHONY: all install package test
