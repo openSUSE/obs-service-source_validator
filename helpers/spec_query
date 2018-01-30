@@ -90,10 +90,11 @@ sub prepare_spec {
 
 sub parse {
   my ($fn, $arch, $no_conditionals, $keep_name_conditionals, $unique_sources,
-      $disambiguate_sources) = @_;
+      $disambiguate_sources, $buildflavor) = @_;
   my $spec = prepare_spec($fn, $no_conditionals, $keep_name_conditionals,
                           $unique_sources, $disambiguate_sources);
   my $config = Build::read_config($arch, []);
+  $config->{'buildflavor'} = $buildflavor if $buildflavor;
   my $descr = Build::Rpm::parse($config, $spec);
   die("unable to parse specfile: $fn\n") unless $descr;
   my @skeys = sort keys(%$descr);
@@ -148,6 +149,7 @@ my $no_conditionals;
 my $keep_name_conditionals;
 my $unique_sources;
 my $disambiguate_sources;
+my $buildflavor;
 
 while (@ARGV) {
   my $opt = shift @ARGV;
@@ -157,6 +159,8 @@ while (@ARGV) {
   } elsif ($opt eq '--arch') {
     $arch = shift @ARGV;
     usage(1) unless $arch;
+  } elsif ($opt eq '--buildflavor') {
+    $buildflavor = shift @ARGV;
   } elsif ($opt eq '--print-subpacks') {
     $print_subpacks = 1;
   } elsif ($opt eq '--print-sources') {
@@ -177,6 +181,6 @@ while (@ARGV) {
 }
 
 my $descr = parse($specfile, $arch, $no_conditionals, $keep_name_conditionals,
-                  $unique_sources, $disambiguate_sources);
+                  $unique_sources, $disambiguate_sources, $buildflavor);
 print_subpacks($descr) if $print_subpacks;
 print_sources($descr) if $print_sources;
