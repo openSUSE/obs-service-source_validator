@@ -15,8 +15,14 @@ test "$VERBOSE" = true && echo -n "- checking for stale or missing changes "
 
 print_specs () {
 for i in "$DIR_TO_CHECK"/*.spec; do
-        # PASS if we have trouble parsing the .spec file
-        $HELPERS_DIR/spec_query --specfile "$i" --print-subpacks | sed -e "s@ .*@@"
+  # PASS if we have trouble parsing the .spec file
+  if [ -e "$DIR_TO_CHECK/_multibuild" ]; then
+    sed -n -e 's,.*<\(flavor\|package\)>\([^<]*\)</\(flavor\|package\)>.*,\2,p' \
+      "$DIR_TO_CHECK/_multibuild" | while read flavor; do
+        $HELPERS_DIR/spec_query --specfile "$i" --print-subpacks --buildflavor $flavor | sed -e "s@ .*@@"
+    done
+  fi
+  $HELPERS_DIR/spec_query --specfile "$i" --print-subpacks | sed -e "s@ .*@@"
 done
 }
 

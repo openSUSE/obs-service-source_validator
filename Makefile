@@ -34,6 +34,8 @@ test:
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/coreutils.spec
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/continue-line.spec
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/cross-aarch64-gcc7.spec
+	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/glibc.spec
+	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/glibc.spec --buildflavor testsuite
 
 
 .PHONY: all install package test
