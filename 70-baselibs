@@ -23,13 +23,13 @@ if [ -e "$DIR_TO_CHECK/_multibuild" ]; then
   sed -n -e 's,.*<\(flavor\|package\)>\([^<]*\)</\(flavor\|package\)>.*,\2,p' \
     "$DIR_TO_CHECK/_multibuild" | while read i; do
 	# PASS if we have trouble parsing the .spec file
-	BUILTBINARIES+=($($HELPERS_DIR/spec_query --specfile "$DIR_TO_CHECK"/*.spec --print-subpacks \
+	BUILTBINARIES+=($($HELPERS_DIR/spec_query --no-conditionals --specfile "$DIR_TO_CHECK"/*.spec --print-subpacks \
 	    --buildflavor $i)) || exit 0
   done
 fi
 for i in "$DIR_TO_CHECK"/*.spec; do
       # PASS if we have trouble parsing the .spec file
-      BUILTBINARIES+=($($HELPERS_DIR/spec_query --specfile "$i" --print-subpacks)) || exit 0
+      BUILTBINARIES+=($($HELPERS_DIR/spec_query --no-conditionals --specfile "$i" --print-subpacks)) || exit 0
 done
 
 # add known keywords from baselibs specification
