@@ -26,7 +26,7 @@ for SPECFILE in $DIR_TO_CHECK/*.spec ; do
               %file*)
                 IS_FILE_LIST=true
               ;;
-              %if*|%el*|%end*|%attr*|%dir*|%conf*)
+              %if*|%el*|%end*|%attr*|%dir*|%conf*|%defattr*|%ghost*|%{*dir*}*|%exclude*)
               ;;
               %doc*/*|/*)
                 test $IS_FILE_LIST = true && {
@@ -37,6 +37,14 @@ for SPECFILE in $DIR_TO_CHECK/*.spec ; do
                       ;;
                     esac
                 }
+              ;;
+              %doc*COPYING*|%doc*LICENSE*)
+                test $IS_FILE_LIST = true && {
+                  echo "(W) found COPYING or LICENSE file marked as %doc, please mark as %license instead"
+                  echo "LINE is: \"$LINE\""
+                }
+              ;;
+              %doc*)
               ;;
               %*)
                 IS_FILE_LIST=false
