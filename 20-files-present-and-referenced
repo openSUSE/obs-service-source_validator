@@ -6,13 +6,14 @@ DIR_TO_CHECK=$1
 DESTINATIONDIR=$2
 OSC_MODE=""
 test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
-HELPERS_DIR="/usr/lib/obs/service/source_validators/helpers"
+BASE_DIR=$(dirname $0)
+BASE_DIR=${BASE_DIR:-.}
+HELPERS_DIR="$BASE_DIR/helpers"
 $HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
 test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && {
 	DESTINATIONDIR="$DIR_TO_CHECK/.osc"
 	OSC_MODE="true"
 }
-
 
 RETURN=0
 
