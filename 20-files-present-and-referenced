@@ -2,8 +2,8 @@
 
 test "$1" = "--verbose" && { VERBOSE=true ; shift ; }
 test "$1" = "--batchmode" && { BATCHMODE=true ; shift ; }
-DIR_TO_CHECK=$1
-DESTINATIONDIR=$2
+DIR_TO_CHECK="$1"
+DESTINATIONDIR="$2"
 OSC_MODE=""
 test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
 BASE_DIR=$(dirname $0)
@@ -53,7 +53,7 @@ case $MY_ARCH in
     ;;
 esac
 
-for i in $DIR_TO_CHECK/*.spec ; do
+for i in "$DIR_TO_CHECK"/*.spec ; do
         test -f "$i" || continue
         if [ -e "$DIR_TO_CHECK/_multibuild" ]; then
           sed -n -e 's,.*<\(flavor\|package\)>\([^<]*\)</\(flavor\|package\)>.*,\2,p' \
@@ -76,16 +76,16 @@ for i in $DIR_TO_CHECK/*.spec ; do
 	    cleanup_and_exit 1
 	fi
 done
-for i in $DIR_TO_CHECK/*.dsc ; do
+for i in "$DIR_TO_CHECK"/*.dsc ; do
 	test -f "$i" || continue
 	( sed -ne '/^Files:/,$p' < "$i" | sed -e 1d | sed -e '/^[^ ]/,$d' | while read debchk debsize debfile ; do echo "$debfile" ; done ) >> $TMPDIR/sources
 done
 
 # Add debian only patches to the allowed sources list.
 # but strip tailing -p1 arguments
-test -f $DIR_TO_CHECK/debian.series && \
+test -f "$DIR_TO_CHECK/debian.series" && \
   sed -e '/^$/d' -e '/^#/d' -e 's,[ \t]*-p[0123456789]*$,,' \
-  $DIR_TO_CHECK/debian.series >> $TMPDIR/sources
+  "$DIR_TO_CHECK/debian.series" >> $TMPDIR/sources
 
 test -f $TMPDIR/sources || cleanup_and_exit
 
@@ -101,11 +101,11 @@ mv $TMPDIR/sources.t $TMPDIR/sources
 
 # XML validate files starting with _..
 if [ -x $(type -p xmllint) ]; then
-    for i in $DIR_TO_CHECK/_service; do
-        test -f $i || continue
-        BASE=${i##*/}
+    for i in "$DIR_TO_CHECK/_service"; do
+        test -f "$i" || continue
+        BASE="${i##*/}"
 
-        xmllint --format $i >/dev/null || {
+        xmllint --format "$i" >/dev/null || {
             echo "(E) $(basename $i) is not valid XML"
             RETURN=2
             continue
@@ -113,7 +113,7 @@ if [ -x $(type -p xmllint) ]; then
 
         # Check if _service is sane
         if [ "$BASE" = "_service" ]; then
-            xmllint --format $i > $TMPDIR/_service
+            xmllint --format "$i" > $TMPDIR/_service
 
             if egrep -q "service .*mode=." $TMPDIR/_service \
                     && ! egrep -q "service .*mode=.(disabled|buildtime|explicit|localonly)" \
@@ -163,10 +163,10 @@ fi
 # Verify GPG keys
 #
 
-if [ -f $DIR_TO_CHECK/*.keyring 2>/dev/null ]; then
+if [ -f "$DIR_TO_CHECK"/*.keyring 2>/dev/null ]; then
     GPG_OPTIONS="--homedir $TMPDIR -q --no-default-keyring --keyring $TMPDIR/.checkifvalidsourcedir-gpg-keyring --trust-model always"
-    gpg $GPG_OPTIONS --import $DIR_TO_CHECK/*.keyring
-    for i in $DIR_TO_CHECK/*.sig $DIR_TO_CHECK/*.sign $DIR_TO_CHECK/*.asc; do
+    gpg $GPG_OPTIONS --import "$DIR_TO_CHECK"/*.keyring
+    for i in "$DIR_TO_CHECK"/*.sig "$DIR_TO_CHECK"/*.sign "$DIR_TO_CHECK"/*.asc; do
         if [ -f "$i" ]; then
 	    validatefn=${i%.asc}
 	    validatefn=${validatefn%.sig}
@@ -213,7 +213,7 @@ fi
 #
 # now check if everything is marked in spec files.
 #
-for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
+for i in "$DIR_TO_CHECK"/* "$DIR_TO_CHECK"/.* ; do
     BASE=${i##*/}
     case $BASE in
 	\.|\.\.) continue ;;
@@ -230,7 +230,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	    else
 		echo "- package has $BASE: (new or modified)"
 		echo "--------------------------------------------------------------"
-		cat $DIR_TO_CHECK/$BASE
+		cat "$DIR_TO_CHECK/$BASE"
 		echo "--------------------------------------------------------------"
 		if test "$BATCHMODE" != true ; then
 		    echo -n "Is this correct? [N/y/d] (y to ignore) "
@@ -259,7 +259,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	    else
 		echo "- package has $BASE: (new or modified)"
 		echo "--------------------------------------------------------------"
-		cat $DIR_TO_CHECK/$BASE
+		cat "$DIR_TO_CHECK/$BASE"
 		echo "--------------------------------------------------------------"
 		if test "$BATCHMODE" != true ; then
 		    echo -n "Is this correct? [N/y/d] (y to ignore) "
@@ -361,19 +361,19 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	*)
             SEARCHTERM=${BASE//\\/\\\\}
             grep -a -x "$SEARCHTERM" $TMPDIR/sources > /dev/null && continue
-            test -f $DIR_TO_CHECK/_service && egrep -q 'mode=.remoterun' $DIR_TO_CHECK/_service && continue
-            test -f $DIR_TO_CHECK/_service && egrep -q 'name=.product_converter' $DIR_TO_CHECK/_service && continue
+            test -f "$DIR_TO_CHECK/_service" && egrep -q 'mode=.remoterun' "$DIR_TO_CHECK/_service" && continue
+            test -f "$DIR_TO_CHECK/_service" && egrep -q 'name=.product_converter' "$DIR_TO_CHECK/_service" && continue
             # be a bit more relaxed for osc, it won't upload directories anyway
-            [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d  $DIR_TO_CHECK/.osc ] && continue
+            [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d  "$DIR_TO_CHECK/.osc" ] && continue
             # and source services on server side
-            [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d $DIR_TO_CHECK/.old ] && continue
+            [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d "$DIR_TO_CHECK/.old" ] && continue
 
             warn_on_unmentioned_files $BASE
 
             if test "$RETURN" != "2" ; then
                 if [ -d "$DIR_TO_CHECK/$BASE" ] ; then
                     # be a bit more relaxed for osc, it won't upload directories anyway
-                    if [ ! -d $DIR_TO_CHECK/.osc ] ; then
+                    if [ ! -d "$DIR_TO_CHECK/.osc" ] ; then
                         echo "!! $BASE is a directory !!"
                         if test "$BATCHMODE" != true ; then
                             echo    "     remove subtree with 'r'"
