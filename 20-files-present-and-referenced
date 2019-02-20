@@ -362,6 +362,7 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
             SEARCHTERM=${BASE//\\/\\\\}
             grep -a -x "$SEARCHTERM" $TMPDIR/sources > /dev/null && continue
             test -f $DIR_TO_CHECK/_service && egrep -q 'mode=.remoterun' $DIR_TO_CHECK/_service && continue
+            test -f $DIR_TO_CHECK/_service && egrep -q 'name=.product_converter' $DIR_TO_CHECK/_service && continue
             # be a bit more relaxed for osc, it won't upload directories anyway
             [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d  $DIR_TO_CHECK/.osc ] && continue
             # and source services on server side

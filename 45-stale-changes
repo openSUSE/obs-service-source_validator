@@ -13,6 +13,11 @@ test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_
 RETURN=0
 test "$VERBOSE" = true && echo -n "- checking for stale or missing changes "
 
+test -f $DIR_TO_CHECK/_service && egrep -q 'name=.product_converter' $DIR_TO_CHECK/_service && {
+    test "$VERBOSE" = true && echo skipped for product
+    exit 0
+}
+
 print_specs () {
 for i in "$DIR_TO_CHECK"/*.spec; do
   # PASS if we have trouble parsing the .spec file
