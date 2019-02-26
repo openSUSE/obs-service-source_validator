@@ -32,10 +32,15 @@ done
 }
 
 SPECLIST=`print_specs | sort -u`
+DO_PASS=""
 
 test -n "$SPECLIST" && {
 for i in $SPECLIST ; do
-    test -f $DIR_TO_CHECK/$i.changes || {
+    case $i in
+        *-) i=${i}MACRO ; DO_PASS="1"
+        ;;
+    esac
+    test -f $DIR_TO_CHECK/$i.changes -o "$DO_PASS" = "1" || {
 	echo "WARNING: $i.changes does not exist. This package can not be submitted to openSUSE product projects."
 	exit 0
     }
@@ -47,6 +52,10 @@ for i in $DIR_TO_CHECK/*.changes ; do
     OKAY=0
     for pack in $SPECLIST ; do
         test "$pack" = "$N" && OKAY=1
+        case $pack in
+            *-) test "${pack}MACRO" = "$N" && OKAY=1
+            ;;
+        esac
     done
     if test $OKAY = 0 ; then
 	if ! grep -q "^Source[0-9]*:.*$N.changes" $DIR_TO_CHECK/*.spec ; then
