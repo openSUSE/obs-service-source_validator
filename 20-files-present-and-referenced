@@ -355,7 +355,8 @@ for i in $DIR_TO_CHECK/* $DIR_TO_CHECK/.* ; do
 	debian.*.postinst | \
 	debian.*.postrm | \
 	debian.*.preinst | \
-	debian.*.prerm  | \
+	debian.*.prerm | \
+	debian.*.triggers | \
 	debian.*.lintian-overrides )
 	    ;;
 	*)
