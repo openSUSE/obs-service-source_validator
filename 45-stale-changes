@@ -40,11 +40,12 @@ for i in $SPECLIST ; do
         *-) i=${i}MACRO ; DO_PASS="1"
         ;;
     esac
-    test -f $DIR_TO_CHECK/$i.changes -o "$DO_PASS" = "1" || {
-	echo "WARNING: $i.changes does not exist. This package can not be submitted to openSUSE product projects."
-	exit 0
-    }
+    test -f $DIR_TO_CHECK/$i.changes && DO_PASS=1
 done
+test "$DO_PASS" = "1" || {
+    echo "WARNING: No .changes file found. This package can not be submitted to openSUSE product projects."
+    exit 0
+}
 # check for stale .changes files
 for i in $DIR_TO_CHECK/*.changes ; do
     test -f $i || continue
