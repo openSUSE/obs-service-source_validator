@@ -133,7 +133,7 @@ check_tracked()
 		if test -f "$DESTINATIONDIR/$file"; then
 			return 0
 		fi
-	        if test -f "$DESTINATIONDIR/${file/\.tar\.*/}.obscpio"; then
+	        if test -f "$DESTINATIONDIR/${file/\.tar*/}.obscpio"; then
 			# assume it will generated on builtime based of the archive
 			return 0
 		fi
@@ -144,7 +144,7 @@ check_tracked()
 		return 1
 	fi
 	if ! test -f "$DIR_TO_CHECK/$file"; then
-	        if test -f "$DIR_TO_CHECK/${file/\.tar\.*/}.obscpio"; then
+	        if test -f "$DIR_TO_CHECK/${file/\.tar*/}.obscpio"; then
 			# assume it will generated on builtime based of the archive
 			return 0
 		fi
