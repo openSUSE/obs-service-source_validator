@@ -2,8 +2,8 @@
 
 test "$1" = "--verbose" && { VERBOSE=true ; shift ; }
 test "$1" = "--batchmode" && { BATCHMODE=true ; shift ; }
-DIR_TO_CHECK=$1
-DESTINATIONDIR=$2
+DIR_TO_CHECK="$1"
+DESTINATIONDIR="$2"
 test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
 HELPERS_DIR="/usr/lib/obs/service/source_validators/helpers"
 $HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
@@ -16,16 +16,16 @@ containsElement () {
 }
 
 # PASS if there is no baselibs.conf
-[ -f $DIR_TO_CHECK/baselibs.conf ] || exit 0
+[ -f "$DIR_TO_CHECK/baselibs.conf" ] || exit 0
 
 BUILTBINARIES=()
 if [ -e "$DIR_TO_CHECK/_multibuild" ]; then
   while read i; do
     # PASS if we have trouble parsing the .spec file
     BUILTBINARIES+=($($HELPERS_DIR/spec_query --specfile "$DIR_TO_CHECK"/*.spec --print-subpacks \
-      --buildflavor $i)) || exit 0
+      --buildflavor "$i")) || exit 0
     BUILTBINARIES+=($($HELPERS_DIR/spec_query --no-conditionals --specfile "$DIR_TO_CHECK"/*.spec --print-subpacks \
-      --buildflavor $i)) || exit 0
+      --buildflavor "$i")) || exit 0
   done < <(sed -n -e 's,.*<\(flavor\|package\)>\([^<]*\)</\(flavor\|package\)>.*,\2,p' "$DIR_TO_CHECK/_multibuild")
 fi
 for i in "$DIR_TO_CHECK"/*.spec; do
@@ -36,7 +36,7 @@ done
 
 # add known keywords from baselibs specification
 BUILTBINARIES+=('arch' 'targetname' 'targettype')
-BASELIBSREF=$(grep -o "^[a-zA-Z0-9.+_-]\+" $DIR_TO_CHECK/baselibs.conf)
+BASELIBSREF=$(grep -o "^[a-zA-Z0-9.+_-]\+" "$DIR_TO_CHECK/baselibs.conf")
 
 RETURN=0
 for rpm in $BASELIBSREF; do
