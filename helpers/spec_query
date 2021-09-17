@@ -25,7 +25,7 @@ sub prepare_spec {
   my %seen;
   my $dtags;
   my @ifs;
-  while (<F>) {
+  for (my $line = 0; <F>; $line++) {
     # only process if conditionals in non line continuation contexts
     if (/^\s*%(?:define|global).*\\$/) {
       push @$spec, $_;
@@ -39,20 +39,20 @@ sub prepare_spec {
     }
 
     if (/^\s*%if\s+.*%\{?name/ && $keep_name_conditionals) {
-      unshift @ifs, $st_ifname;
+      unshift @ifs, { $st_ifname => $line };
     } elsif (/^\s*%if/) {
-      unshift @ifs, $st_if;
+      unshift @ifs, { $st_if => $line };
       next;
     } elsif (/^\s*%else/) {
-      die("got %else without %if\n") unless @ifs;
-      if ($ifs[0] == $st_ifname) {
+      die($line . ": %else without %if\n") unless @ifs;
+      if (exists $ifs[0]{$st_ifname}) {
         push @$spec, "%endif";
-        $ifs[0] = $st_if;
+        $ifs[0] = { $st_if => $line };
       }
       next;
     } elsif (/^\s*%endif/) {
-      die("got %endif without %if\n") unless @ifs;
-      push @$spec, "%endif" if $ifs[0] == $st_ifname;
+      die($line . ": %endif without %if\n") unless @ifs;
+      push @$spec, "%endif" if (exists $ifs[0]{$st_ifname});
       shift @ifs;
       next;
     }
@@ -70,7 +70,11 @@ sub prepare_spec {
     }
     push @$spec, $_;
   }
-  die("got %if without %endif\n") if @ifs;
+  if (@ifs and exists $ifs[0]{$st_if}) {
+    die($ifs[0]{$st_if} . ": %if without %endif\n");
+  } elsif (@ifs) {
+    die($ifs[0]{$st_ifname} . ": %if name without %endif\n");
+  }
   close(F) || die("close: $!\n");
   my @amb = sort(keys(%$dtags));
   die('Ambiguous tags: ' . join(', ', @amb) . "\n") if $unique_sources && @amb;
