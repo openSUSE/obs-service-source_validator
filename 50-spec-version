@@ -2,8 +2,8 @@
 
 test "$1" = "--verbose" && { VERBOSE=true ; shift ; }
 test "$1" = "--batchmode" && { BATCHMODE=true ; shift ; }
-DIR_TO_CHECK=$1
-DESTINATIONDIR=$2
+DIR_TO_CHECK="$1"
+DESTINATIONDIR="$2"
 test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
 HELPERS_DIR="/usr/lib/obs/service/source_validators/helpers"
 $HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
@@ -12,21 +12,21 @@ test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_
 RETURN=0
 
 test "$VERBOSE" = true && echo -n "- checking version in specfile "
-for i in $DIR_TO_CHECK/*.spec ; do
+for i in "$DIR_TO_CHECK"/*.spec ; do
     WARNING_SHOWN=""
-    test -f $i || continue
+    test -f "$i" || continue
     test "$VERBOSE" = true && echo -n "."
     RETURN=0
-    grep -a ^Version: $i > /dev/null || {
-        echo ERROR: Can not recognize Version in `basename $i`.
+    grep -a ^Version: "$i" > /dev/null || {
+        echo ERROR: Can not recognize Version in `basename "$i"`.
         echo Remember that Version: must be at the beginning of line.
         RETURN=1
     }
-    grep -a ^Version: $i | while read KEY VERSION ; do
+    grep -a ^Version: "$i" | while read KEY VERSION ; do
         case "$VERSION" in
           AUTO)
-            test -e $DIR_TO_CHECK/get_version_number.sh || {
-                echo ERROR: `basename $i` has Version \"AUTO\" but get_version_number.sh does not exist.
+            test -e "$DIR_TO_CHECK"/get_version_number.sh || {
+                echo ERROR: `basename "$i"` has Version \"AUTO\" but get_version_number.sh does not exist.
                 RETURN=1
             }
           ;;
@@ -36,18 +36,18 @@ for i in $DIR_TO_CHECK/*.spec ; do
 		    echo "packager is responsible that the resulting string"
 		    echo "is non-empty and contains no \"-\"."
 		    echo "----------"
-		    grep -A2 -B2 -a -i -e "^Version:.*%" $i
+		    grep -A2 -B2 -a -i -e "^Version:.*%" "$i"
 		    echo "----------"
 		    WARNING_SHOWN="yes"
 		    sleep 2
 		fi
           ;;
           *-*)
-            echo ERROR: `basename $i` has a Version with a \"-\". This is not allowed.
+            echo ERROR: `basename "$i"` has a Version with a \"-\". This is not allowed.
             RETURN=1
           ;;
           "")
-            echo ERROR: `basename $i` has empty  Version field. This is not allowed.
+            echo ERROR: `basename "$i"` has empty  Version field. This is not allowed.
             RETURN=1
           ;;
         esac
