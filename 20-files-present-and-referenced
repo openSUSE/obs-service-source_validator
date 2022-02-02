@@ -230,7 +230,11 @@ for i in "$DIR_TO_CHECK"/* "$DIR_TO_CHECK"/.* ; do
 	    else
 		echo "- package has $BASE: (new or modified)"
 		echo "--------------------------------------------------------------"
-		cat "$DIR_TO_CHECK/$BASE"
+		if test -f "$DESTINATIONDIR/$BASE" ; then
+			diff -u "$DESTINATIONDIR/$BASE" "$DIR_TO_CHECK/$BASE"
+		else
+			cat "$DIR_TO_CHECK/$BASE"
+		fi
 		echo "--------------------------------------------------------------"
 		if test "$BATCHMODE" != true ; then
 		    echo -n "Is this correct? [N/y/d] (y to ignore) "
@@ -259,7 +263,11 @@ for i in "$DIR_TO_CHECK"/* "$DIR_TO_CHECK"/.* ; do
 	    else
 		echo "- package has $BASE: (new or modified)"
 		echo "--------------------------------------------------------------"
-		cat "$DIR_TO_CHECK/$BASE"
+		if test -f "$DESTINATIONDIR/$BASE" ; then
+			diff -u "$DESTINATIONDIR/$BASE" "$DIR_TO_CHECK/$BASE"
+		else
+			cat "$DIR_TO_CHECK/$BASE"
+		fi
 		echo "--------------------------------------------------------------"
 		if test "$BATCHMODE" != true ; then
 		    echo -n "Is this correct? [N/y/d] (y to ignore) "
