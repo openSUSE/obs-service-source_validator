@@ -20,10 +20,10 @@ test -f "$DIR_TO_CHECK/_service" && egrep -q 'name=.product_converter' "$DIR_TO_
 
 print_specs () {
 for i in "$DIR_TO_CHECK"/*.spec; do
+  [ -e "$i" ] || return
   # PASS if we have trouble parsing the .spec file
   if [ -e "$DIR_TO_CHECK/_multibuild" ]; then
-    sed -n -e 's,.*<\(flavor\|package\)>\([^<]*\)</\(flavor\|package\)>.*,\2,p' \
-      "$DIR_TO_CHECK/_multibuild" | while read flavor; do
+    xmllint -xpath '/multibuild/flavor/text()' "$DIR_TO_CHECK/_multibuild" | while read flavor; do
         $HELPERS_DIR/spec_query --specfile "$i" --print-subpacks --buildflavor $flavor | sed -e "s@ .*@@"
     done
   fi
