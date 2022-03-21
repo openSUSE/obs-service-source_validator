@@ -116,9 +116,9 @@ if [ -x $(type -p xmllint) ]; then
             xmllint --format "$i" > $TMPDIR/_service
 
             if egrep -q "service .*mode=." $TMPDIR/_service \
-                    && ! egrep -q "service .*mode=.(disabled|buildtime|explicit|localonly)" \
+                    && ! egrep -q "service .*mode=.(disabled|buildtime|manual|localonly)" \
                     $TMPDIR/_service; then
-                echo "(W) openSUSE: projects only allow 'disabled', 'buildtime', 'explicit' or 'localonly' services."
+                echo "(W) openSUSE: projects only allow 'disabled', 'buildtime', 'manual' or 'localonly' services."
             fi
         fi
 
