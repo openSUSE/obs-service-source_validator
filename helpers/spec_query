@@ -43,6 +43,9 @@ sub prepare_spec {
     } elsif (/^\s*%if/) {
       unshift @ifs, { $st_if => $line };
       next;
+    } elsif (/^\s*%elif/) {
+      die($line . ": %elif without %if\n") unless @ifs;
+      next;
     } elsif (/^\s*%else/) {
       die($line . ": %else without %if\n") unless @ifs;
       if (exists $ifs[0]{$st_ifname}) {
