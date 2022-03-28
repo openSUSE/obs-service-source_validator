@@ -56,7 +56,7 @@ while (<>) {
 			if ($arg =~ /^[0-9]/) {
 				$APPLIED[$arg] = $applied;
 			} else {
-				print STDERR "$col_red(E) %patch -P without following numeric argument$col_norm\n";
+				print STDERR "${col_red}ERROR: %patch -P without following numeric argument$col_norm\n";
 				print STDERR "line was $_\n" if $debug;
 				$errors++;
 			}
@@ -65,7 +65,7 @@ while (<>) {
 			if ($arg =~ /^[0-9]/) {
 				$APPLIED[$arg] = $applied unless $APPLIED[$arg];
 			} else {
-				print STDERR "$col_red(E) %patch -P without following numeric argument$col_norm\n";
+				print STDERR "${col_red}ERROR: %patch -P without following numeric argument$col_norm\n";
 				print STDERR "line was $_\n" if $debug;
 				$errors++;
 			}
@@ -80,7 +80,7 @@ while (<>) {
 			if ($arg =~ /^[0-9]/) {
 				$APPLIED[$arg] = $applied unless $APPLIED[$arg];
 			} else {
-				print STDERR "$col_red(E) %patchZZZ without following numeric argument$col_norm\n";
+				print STDERR "${col_red}ERROR: %patchZZZ without following numeric argument$col_norm\n";
 				print STDERR "line was $_\n" if $debug;
 				$errors++;
 			}
@@ -111,14 +111,14 @@ for my $i (1...$#PATCHES) {
 		print STDERR "$col_yel(W) $filename: patch $i $PATCHES[$i]: is commented out$col_norm\n";
                 next;
 	}
-	print STDERR "$col_red(E) $filename: patch $i $PATCHES[$i] apparently not applied (or not applied via %patch)$col_norm\n";
+	print STDERR "${col_red}ERROR: $filename: patch $i $PATCHES[$i] apparently not applied (or not applied via %patch)$col_norm\n";
 	$errors++;
 }
 for my $j (1...$#APPLIED) {
 	next unless $APPLIED[$j];
 	next if $APPLIED[$j];
 	next if $PATCHES[$j] == 2;
-	print STDERR "$col_red(E) $filename: patch number $j referenced but not defined$col_norm\n";
+	print STDERR "${col_red}ERROR: $filename: patch number $j referenced but not defined$col_norm\n";
 	$errors++;
 }
 
