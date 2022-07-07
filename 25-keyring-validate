@@ -1,0 +1,62 @@
+#!/bin/bash
+
+test "$1" = "--verbose" && { VERBOSE=true ; shift ; }
+test "$1" = "--batchmode" && { BATCHMODE=true ; shift ; }
+DIR_TO_CHECK="$1"
+test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=$PWD
+RETURN=0
+
+keyrings=()
+for i in "$DIR_TO_CHECK"/*.keyring ; do
+    test -f "$i" || continue
+    : Found keyring "$i"
+    keyrings+=("$i")
+done
+
+# check for stale .keyring files
+if test ${#keyrings[@]} -gt 1; then
+    echo "ERROR: expecting one keyring named '$(basename -- "$DIR_TO_CHECK").keyring'"
+    RETURN=1
+elif test ${#keyrings[@]} -lt 1; then
+    # check for missing .keyring files
+    for i in "$DIR_TO_CHECK"/*.sig "$DIR_TO_CHECK"/*.sign "$DIR_TO_CHECK"/*.asc; do
+	test -f "$i" || continue
+	if test ! -f "${keyrings[0]}"; then
+	    echo "Warning: Need a $(basename -- "$DIR_TO_CHECK").keyring file for validating '$(basename -- $i)'"
+	fi
+    done
+else
+    # verify GPG signatures
+    GPGTMP=$(mktemp -d)
+    GPG="gpg --homedir $GPGTMP -q --no-default-keyring --keyring $GPGTMP/.gpg-keyring --trust-model always"
+    $GPG --import "${keyrings[0]}"
+    for i in "$DIR_TO_CHECK"/*.sig "$DIR_TO_CHECK"/*.sign "$DIR_TO_CHECK"/*.asc; do
+        test -f "$i" || continue
+        validatefn=${i%.asc}
+        validatefn=${validatefn%.sig}
+        validatefn=${validatefn%.sign}
+        if [ -f "$validatefn" ]; then
+            if ! $GPG -q --verify -- "$i" "$validatefn"; then
+                echo "ERROR: signature $i does not validate"
+                RETURN=2
+            fi
+        else
+            if [ -f "$validatefn.gz" -o -f "$validatefn.bz2" -o -f "$validatefn.xz" -o -f "$validatefn.zst" ]; then
+                TMPFILE=$(mktemp)
+                [ -f "$validatefn.gz" ] && zcat "$validatefn.gz" > "$TMPFILE"
+                [ -f "$validatefn.bz2" ] && bzcat "$validatefn.bz2" > "$TMPFILE"
+                [ -f "$validatefn.xz" ] && xzcat "$validatefn.xz" > "$TMPFILE"
+                [ -f "$validatefn.zst" ] && zstdcat "$validatefn.zst" > "$TMPFILE"
+                if ! $GPG -q --verify -- "$i" "$TMPFILE" ; then
+                    echo "ERROR: signature $i does not validate"
+                    RETURN=2
+                fi
+                rm -f "$TMPFILE"
+            fi
+        fi
+    done
+    rm -rf "$GPGTMP"
+fi
+
+test "$VERBOSE" = true && echo ".. completed $0"
+exit $RETURN
