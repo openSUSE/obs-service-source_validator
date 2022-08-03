@@ -159,6 +159,30 @@ if ! test -f "$DIR_TO_CHECK/_service"; then
     done
 fi
 
+# Check for empty or ill-formatted patches
+
+for f in $(<$TMPDIR/sources); do
+    case $f in
+        *.dif|*.diff|*.patch)
+            if ! test -s  "$DIR_TO_CHECK/$f"; then
+                echo "ERROR: Patch file $f is zero bytes long, remove empty patch?"
+                RETURN=2
+            fi
+            if test "$(type -p patch)"; then
+                patch -s -t --dry-run -i "$DIR_TO_CHECK/$f" >/dev/null
+                # example a file that only contains a commit header but does not actually
+                # modify any files gives this error message. we treat it as an error
+                # because it is most likely a failed quilt run/erratic vulnerability patch
+                # backport
+                if test $? = 2; then
+                    echo "ERROR: Patch file $f does not validate."
+                    RETURN=2
+                fi
+            fi
+            ;;
+    esac
+done
+
 #
 # now check if everything is marked in spec files.
 #
