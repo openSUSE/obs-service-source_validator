@@ -154,8 +154,8 @@ check_tracked()
 }
 
 if ! test -f "$DIR_TO_CHECK/_service"; then
-    for HASTOBETHER in `cat $TMPDIR/sources` ; do
-        check_tracked "$HASTOBETHER" || RETURN=2
+    for HASTOBETHERE in $(<$TMPDIR/sources); do
+        check_tracked "$HASTOBETHERE" || RETURN=2
     done
 fi
 
