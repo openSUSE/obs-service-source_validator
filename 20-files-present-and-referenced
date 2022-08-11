@@ -162,6 +162,9 @@ fi
 # Check for empty or ill-formatted patches
 
 for f in $(<$TMPDIR/sources); do
+    if test ! -f "$DIR_TO_CHECK/$file"; then
+        continue
+    fi
     case $f in
         *.dif|*.diff|*.patch)
             if ! test -s  "$DIR_TO_CHECK/$f"; then
@@ -278,7 +281,7 @@ for i in "$DIR_TO_CHECK"/* "$DIR_TO_CHECK"/.* ; do
 	    ;;
 	.*.spec)
 	    rm -v -- "$DIR_TO_CHECK/$BASE"
-	    ;; 
+	    ;;
 	*.changes | \
 	*.lsm | \
 	*.spec | \
