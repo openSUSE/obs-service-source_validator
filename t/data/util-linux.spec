@@ -440,7 +440,7 @@ make %{?_smp_mflags} setctsid CFLAGS="%{optflags}" CC="%{__cc}"
 #
 # WARNING: Never edit following line without doing all suggested in the echo below!
 UTIL_LINUX_KNOWN_SYSTEMD_DEPS='./login-utils/lslogins.c ./misc-utils/logger.c ./misc-utils/uuidd.c '
-UTIL_LINUX_FOUND_SYSTEMD_DEPS=$(grep -rl 'HAVE_LIBSYSTEMD' . | fgrep '.c' | LC_ALL=C sort | tr '\n' ' ')
+UTIL_LINUX_FOUND_SYSTEMD_DEPS=$(grep -rl 'HAVE_LIBSYSTEMD' . | grep -F '.c' | LC_ALL=C sort | tr '\n' ' ')
 if test "$UTIL_LINUX_KNOWN_SYSTEMD_DEPS" != "$UTIL_LINUX_FOUND_SYSTEMD_DEPS" ; then
 	echo "List of utilities depending on systemd have changed.
 Please check the new util-linux-systemd file list, file removal and update of Conflicts for safe update!

@@ -115,8 +115,8 @@ if [ -x $(type -p xmllint) ]; then
         if [ "$BASE" = "_service" ]; then
             xmllint --format "$i" > $TMPDIR/_service
 
-            if egrep -q "service .*mode=." $TMPDIR/_service \
-                    && ! egrep -q "service .*mode=.(disabled|manual|buildtime|localonly)" \
+            if grep -E -q "service .*mode=." $TMPDIR/_service \
+                    && ! grep -E -q "service .*mode=.(disabled|manual|buildtime|localonly)" \
                     $TMPDIR/_service; then
                 echo "(W) openSUSE: projects only allow 'manual' or 'buildtime' services (localonly/disabled are deprecated)."
             fi
@@ -263,7 +263,7 @@ for i in "$DIR_TO_CHECK"/* "$DIR_TO_CHECK"/.* ; do
             warn_on_unmentioned_files $BASE
 
 
-	    LINE=$(egrep "^[^#]*setBadness" "$DIR_TO_CHECK/$BASE")
+	    LINE=$(grep -E "^[^#]*setBadness" "$DIR_TO_CHECK/$BASE")
 	    if [ "$LINE" != "" ]; then
 	        if test "$BATCHMODE" != true ; then
 		    echo "ERROR: Found possibly illegal rpmlintrc line:"
@@ -346,8 +346,8 @@ for i in "$DIR_TO_CHECK"/* "$DIR_TO_CHECK"/.* ; do
 	*)
             SEARCHTERM=${BASE//\\/\\\\}
             grep -a -x "$SEARCHTERM" $TMPDIR/sources > /dev/null && continue
-            test -f "$DIR_TO_CHECK/_service" && egrep -q 'mode=.remoterun' "$DIR_TO_CHECK/_service" && continue
-            test -f "$DIR_TO_CHECK/_service" && egrep -q 'name=.product_converter' "$DIR_TO_CHECK/_service" && continue
+            test -f "$DIR_TO_CHECK/_service" && grep -E -q 'mode=.remoterun' "$DIR_TO_CHECK/_service" && continue
+            test -f "$DIR_TO_CHECK/_service" && grep -E -q 'name=.product_converter' "$DIR_TO_CHECK/_service" && continue
             # be a bit more relaxed for osc, it won't upload directories anyway
             [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d  "$DIR_TO_CHECK/.osc" ] && continue
             # and source services on server side
