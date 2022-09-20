@@ -41,18 +41,20 @@ else
                 RETURN=2
             fi
         else
-            if [ -f "$validatefn.gz" -o -f "$validatefn.bz2" -o -f "$validatefn.xz" -o -f "$validatefn.zst" ]; then
-                TMPFILE=$(mktemp)
-                [ -f "$validatefn.gz" ] && zcat "$validatefn.gz" > "$TMPFILE"
-                [ -f "$validatefn.bz2" ] && bzcat "$validatefn.bz2" > "$TMPFILE"
-                [ -f "$validatefn.xz" ] && xzcat "$validatefn.xz" > "$TMPFILE"
-                [ -f "$validatefn.zst" ] && zstdcat "$validatefn.zst" > "$TMPFILE"
-                if ! $GPG -q --verify -- "$i" "$TMPFILE" ; then
-                    echo "ERROR: signature $i does not validate"
-                    RETURN=2
+            for ext in gz bz2 xz zst ; do
+                if [ -f "$validatefn.$ext" ] ; then
+                    case $ext in
+                        gz) decomp=zcat ;;
+                        bz2) decomp=bzcat ;;
+                        xz) decomp=xzcat ;;
+                        zst) decomp=zstdcat ;;
+                    esac
+                    if ! $decomp "$validatefn.$ext" | $GPG -q --verify -- "$i" - ; then
+                        echo "ERROR: signature $i does not validate"
+                        RETURN=2
+                    fi
                 fi
-                rm -f "$TMPFILE"
-            fi
+            done
         fi
     done
     rm -rf "$GPGTMP"
