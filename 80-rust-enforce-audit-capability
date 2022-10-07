@@ -65,7 +65,7 @@ def process_spec_file(specpath):
     ]
 
     requires_rust = any([
-        x == "cargo" or x == "rust" or x == "cargo-packaging" or x == "rust+cargo"
+        x in ('cargo', 'rust', 'cargo-packaging', 'rust+cargo')
         for x in buildrequires
     ])
 
@@ -126,7 +126,7 @@ def main():
         print("%s" % args)
 
     # List all spec files in srcdir.
-    specfiles = [x for x in os.listdir(args.srcdir) if x.endswith(".spec")]
+    specfiles = Path(args.srcdir).glob("*.spec")
 
     # For each spec file, process it.
     reports = [process_spec_file(x) for x in specfiles]
