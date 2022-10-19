@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 #
 # OBS Source Service to enforce correct configuration of
 # rust projects for security maintenance.
