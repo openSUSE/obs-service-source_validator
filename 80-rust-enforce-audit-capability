@@ -1,0 +1,149 @@
+#!/usr/bin/python3
+#
+# OBS Source Service to enforce correct configuration of
+# rust projects for security maintenance.
+#
+# (C) 2021 William Brown <william at blackhats.net.au>
+
+"""\
+This OBS source validator is designed to assist our security
+teams in maintenance and resolving of security issues related
+to rust packages. This is to improve the standard of rust
+packaging in OpenSUSE
+
+This validator enforces that when a program depends on rust,
+cargo or cargo-packaging:
+
+* That cargo_audit is configured
+* If cargo_vendor is configured, update=true is set
+
+If a package depends on rust-packaging, a warning is emitted
+that the package needs to migrate to cargo-packaging.
+"""
+
+import argparse
+import sys
+import os
+from enum import Enum
+from pathlib import Path
+import xml.etree.ElementTree as ET
+
+description = __doc__
+
+VERBOSE = os.getenv('DEBUG') is not None
+
+class Result(Enum):
+    Fail = 0
+    Pass = 1
+    Warn = 2
+
+def process_spec_file(specpath):
+    reports = []
+
+    if VERBOSE:
+        print("Processing: %s" % specpath)
+
+    f_contents = []
+    with open(specpath, 'r') as f:
+        f_contents = f.readlines()
+
+    name = None
+    for l in f_contents:
+        if l.startswith("Name:"):
+            name = l.split(":", 1)[1].strip()
+            break
+
+    if name is None:
+        reports.append((specpath, Result.Fail, "specfile missing 'Name:'"))
+        return reports
+
+    # Build the set of buildrequries
+    buildrequires = [
+        l.split(":", 1)[1].strip()
+        for l in f_contents
+        if l.startswith("BuildRequires:")
+    ]
+
+    requires_rust = any([
+        x in ('cargo', 'rust', 'cargo-packaging', 'rust+cargo')
+        for x in buildrequires
+    ])
+
+    if VERBOSE:
+        print("%s requires_rust: %s" % (name, requires_rust))
+
+    rust_packaging = any([
+        x == "rust"
+        for x in buildrequires
+    ])
+
+    if rust_packaging:
+        reports.append((name, Result.Warn, "rust-packaging is deprecated - you must convert to cargo-packaging"))
+
+    if requires_rust:
+        # Given the spec path, get the work dir.
+        specpath_abs = os.path.abspath(specpath)
+        workdir = Path(specpath_abs).parent
+        service = os.path.join(workdir, "_service")
+        if not os.path.exists(service):
+            reports.append((name, Result.Warn, "package depends on rust but does not have obs services configured with cargo_audit or cargo_vendor"))
+            return reports
+        # Then process the _service.
+        has_audit = False
+        has_vendor = False
+        has_vendor_update = False
+
+        tree = ET.parse(service)
+        root_node = tree.getroot()
+        for tag in root_node.findall('service'):
+            if tag.attrib['name'] == 'cargo_audit':
+                has_audit = True
+            if tag.attrib['name'] == 'cargo_vendor':
+                has_vendor = True
+                for attr in tag:
+                    if attr.attrib['name'] == 'update' and attr.text == 'true':
+                        has_vendor_update = True
+
+        if not has_audit:
+            reports.append((name, Result.Fail, "package depends on rust but does not have cargo_audit configured. See https://en.opensuse.org/Packaging_Rust_Software"))
+        if has_vendor and not has_vendor_update:
+            reports.append((name, Result.Warn, "package uses cargo_vendor, but is missing '<param name=\"update\">true</param>' to apply security updates"))
+
+    return reports
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description=description, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("--batchmode", default=False, action='store_true')
+    parser.add_argument("srcdir", default=None, nargs='?')
+    # We always ignore this parameter, but it has to exist.
+    parser.add_argument("outdir", default=None, nargs='?')
+    args = parser.parse_args()
+
+    if VERBOSE:
+        print("%s" % args)
+
+    # List all spec files in srcdir.
+    specfiles = Path(args.srcdir).glob("*.spec")
+
+    # For each spec file, process it.
+    reports = [process_spec_file(x) for x in specfiles]
+
+    reports = [x for report in reports for x in report]
+
+    for report in reports:
+        print("%s: %s" % (report[0], report[2]))
+
+    if any([x[1] == Result.Fail for x in reports]):
+        print("Rust Source Validator: Failed")
+        sys.exit(1)
+    else:
+        if VERBOSE:
+            print("Rust Source Validator: Pass")
+        sys.exit(0)
+
+if __name__ == "__main__":
+    main()
+
