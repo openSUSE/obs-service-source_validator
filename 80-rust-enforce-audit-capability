@@ -117,7 +117,7 @@ def main():
         description=description, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--batchmode", default=False, action='store_true')
-    parser.add_argument("srcdir", default=None, nargs='?')
+    parser.add_argument("srcdir", default=str(Path.cwd()), nargs='?')
     # We always ignore this parameter, but it has to exist.
     parser.add_argument("outdir", default=None, nargs='?')
     args = parser.parse_args()
@@ -125,11 +125,8 @@ def main():
     if VERBOSE:
         print("%s" % args)
 
-    # List all spec files in srcdir.
-    specfiles = Path(args.srcdir).glob("*.spec")
-
     # For each spec file, process it.
-    reports = [process_spec_file(x) for x in specfiles]
+    reports = [process_spec_file(x) for x in Path(args.srcdir).glob("*.spec")]
 
     reports = [x for report in reports for x in report]
 
