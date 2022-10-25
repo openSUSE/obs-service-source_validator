@@ -73,7 +73,7 @@ def process_spec_file(specpath):
         print("%s requires_rust: %s" % (name, requires_rust))
 
     rust_packaging = any([
-        x == "rust"
+        x == "rust-packaging"
         for x in buildrequires
     ])
 
