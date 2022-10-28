@@ -31,7 +31,7 @@ cleanup_and_exit () {
 # display a warning if the file is not in the spec file sources
 #
 warn_on_unmentioned_files () {
-  grep -a -x $1 $TMPDIR/sources > /dev/null || echo "(W) Attention, $1 is not mentioned in spec files as source or patch."
+  grep -q -F -a -x -- $1 $TMPDIR/sources || echo "(W) Attention, \"$1\" is not mentioned in spec files as source or patch."
 }
 
 test "$VERBOSE" = true && echo -n "- checking if needed files are present and none stale "
@@ -189,13 +189,10 @@ done
 #
 # now check if everything is marked in spec files.
 #
-for i in "$DIR_TO_CHECK"/* "$DIR_TO_CHECK"/.* ; do
+find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
     BASE=${i##*/}
-    case $BASE in
-	\.|\.\.) continue ;;
-    esac
     # files to display first
-    case $BASE in 
+    case "$BASE" in
 	config-dist.sh | \
 	get_version_number.sh | \
 	get_release_number.sh | \
@@ -228,8 +225,8 @@ for i in "$DIR_TO_CHECK"/* "$DIR_TO_CHECK"/.* ; do
 	    	fi
 	    fi
             # we want baselibs.conf in the src.rpm
-            if test "$BASE" = baselibs.conf; then
-              warn_on_unmentioned_files $BASE
+            if test "$BASE" = "baselibs.conf"; then
+              warn_on_unmentioned_files "$BASE"
             fi
 
 	    ;;
@@ -260,7 +257,7 @@ for i in "$DIR_TO_CHECK"/* "$DIR_TO_CHECK"/.* ; do
 			echo "###ASK $DIR_TO_CHECK/$BASE"
 		fi
 	    fi
-            warn_on_unmentioned_files $BASE
+            warn_on_unmentioned_files "$BASE"
 
 
 	    LINE=$(grep -E "^[^#]*setBadness" "$DIR_TO_CHECK/$BASE")
@@ -344,8 +341,7 @@ for i in "$DIR_TO_CHECK"/* "$DIR_TO_CHECK"/.* ; do
 	debian.*.lintian-overrides )
 	    ;;
 	*)
-            SEARCHTERM=${BASE//\\/\\\\}
-            grep -a -x "$SEARCHTERM" $TMPDIR/sources > /dev/null && continue
+            grep -q -F -a -x -- "$BASE" $TMPDIR/sources && continue
             test -f "$DIR_TO_CHECK/_service" && grep -E -q 'mode=.remoterun' "$DIR_TO_CHECK/_service" && continue
             test -f "$DIR_TO_CHECK/_service" && grep -E -q 'name=.product_converter' "$DIR_TO_CHECK/_service" && continue
             # be a bit more relaxed for osc, it won't upload directories anyway
@@ -353,7 +349,7 @@ for i in "$DIR_TO_CHECK"/* "$DIR_TO_CHECK"/.* ; do
             # and source services on server side
             [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d "$DIR_TO_CHECK/.old" ] && continue
 
-            warn_on_unmentioned_files $BASE
+            warn_on_unmentioned_files "$BASE"
 
             if test "$RETURN" != "2" ; then
                 if [ -d "$DIR_TO_CHECK/$BASE" ] ; then
