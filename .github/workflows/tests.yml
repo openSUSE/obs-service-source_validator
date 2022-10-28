@@ -1,0 +1,29 @@
+name: tests
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  tests:
+    timeout-minutes: 40
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y curl
+        curl -fsSL https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_22.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/opensuse_tools.gpg > /dev/null
+        sudo add-apt-repository 'deb https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_22.04/ /'
+        sudo apt-get install -y obs-build
+
+    - name: Run tests
+      run: make test
+
