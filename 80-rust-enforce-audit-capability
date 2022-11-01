@@ -32,6 +32,13 @@ description = __doc__
 
 VERBOSE = os.getenv('DEBUG') is not None
 
+# Some packages are exempt from this validation. These should be documented inline as to *why*.
+IGNORE_PACKAGES = [
+    # the advisory db depends on cargo, and thus rust as it is a subcommand of these. However
+    # it has no rust sources itself, so should NOT be subject to the same requirements.
+    "cargo-audit-advisory-db"
+]
+
 class Result(Enum):
     Fail = 0
     Pass = 1
@@ -57,6 +64,10 @@ def process_spec_file(specpath):
         reports.append((specpath, Result.Fail, "specfile missing 'Name:'"))
         return reports
 
+    if name in IGNORE_PACKAGES:
+        if VERBOSE:
+            print("skipping exempt package: %s" % name)
+
     # Build the set of buildrequries
     buildrequires = [
         l.split(":", 1)[1].strip()
@@ -65,7 +76,7 @@ def process_spec_file(specpath):
     ]
 
     requires_rust = any([
-        x in ('cargo', 'rust', 'cargo-packaging', 'rust+cargo')
+        x in ('cargo', 'rust', 'cargo-packaging', 'rust+cargo', 'rust-packaging')
         for x in buildrequires
     ])
 
