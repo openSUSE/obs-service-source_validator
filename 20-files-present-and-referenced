@@ -55,7 +55,7 @@ esac
 
 for i in "$DIR_TO_CHECK"/*.spec ; do
         test -f "$i" || continue
-        if [ -e "$DIR_TO_CHECK/_multibuild" ]; then
+        if [ -e "$DIR_TO_CHECK/_multibuild" ] && grep -q "@BUILD_FLAVOR@" "$i"; then
           sed -n -e 's,.*<\(flavor\|package\)>\([^<]*\)</\(flavor\|package\)>.*,\2,p' \
               "$DIR_TO_CHECK/_multibuild" | while read flavor; do
 	    $HELPERS_DIR/spec_query --specfile "$i" --print-sources --buildflavor "$flavor"\
