@@ -316,6 +316,7 @@ find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
 	debian.compat | \
 	debian.control | \
 	debian.copyright | \
+	debian.lintian-overrides | \
 	debian.manpages | \
 	debian.postinst | \
 	debian.postrm | \
