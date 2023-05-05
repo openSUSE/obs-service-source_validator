@@ -7,6 +7,7 @@ DESTINATIONDIR="$2"
 test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
 HELPERS_DIR="/usr/lib/obs/service/source_validators/helpers"
 $HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
+. $HELPERS_DIR/functions
 test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
 
 containsElement () {
@@ -19,20 +20,12 @@ containsElement () {
 [ -f "$DIR_TO_CHECK/baselibs.conf" ] || exit 0
 
 BUILTBINARIES=()
-if [ -e "$DIR_TO_CHECK/_multibuild" ]; then
-  while read i; do
-    # PASS if we have trouble parsing the .spec file
-    BUILTBINARIES+=($($HELPERS_DIR/spec_query --specfile "$DIR_TO_CHECK"/*.spec --print-subpacks \
-      --buildflavor "$i")) || exit 0
-    BUILTBINARIES+=($($HELPERS_DIR/spec_query --no-conditionals --specfile "$DIR_TO_CHECK"/*.spec --print-subpacks \
-      --buildflavor "$i")) || exit 0
-  done < <(sed -n -e 's,.*<\(flavor\|package\)>\([^<]*\)</\(flavor\|package\)>.*,\2,p' "$DIR_TO_CHECK/_multibuild")
-fi
-for i in "$DIR_TO_CHECK"/*.spec; do
-      # PASS if we have trouble parsing the .spec file
-      BUILTBINARIES+=($($HELPERS_DIR/spec_query --specfile "$i" --print-subpacks)) || exit 0
-      BUILTBINARIES+=($($HELPERS_DIR/spec_query --no-conditionals --specfile "$i" --print-subpacks)) || exit 0
-done
+while read recipe flavor; do
+	BUILTBINARIES+=($($HELPERS_DIR/spec_query --specfile "${DIR_TO_CHECK}/${recipe}" --print-subpacks \
+	--buildflavor "$flavor")) || exit 0
+	BUILTBINARIES+=($($HELPERS_DIR/spec_query --specfile "${DIR_TO_CHECK}/${recipe}" --print-subpacks \
+	--buildflavor "$flavor" --no-conditionals)) || exit 0
+done < <(spec_build_flavors "$DIR_TO_CHECK")
 
 # add known keywords from baselibs specification
 BUILTBINARIES+=('arch' 'targetname' 'targettype')
