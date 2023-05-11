@@ -95,6 +95,23 @@ sub prepare_spec {
   return $spec;
 }
 
+# Borrowed from obs-build's expanddeps:
+# For %include, get the filename without path and look in the recipe dir.
+sub includecallback {
+  my ($recipe, $file) = @_;
+  $file =~ s/.*\///;
+  $recipe =~ s/[^\/]+$//;
+  $file = "$recipe$file";
+  my $fd;
+  my $str;
+  if (open($fd, '<', $file)) {
+    local $/;
+    $str = <$fd>;
+    close($fd);
+  }
+  return $str;
+}
+
 sub parse {
   my ($fn, $arch, $no_conditionals, $keep_name_conditionals, $unique_sources,
       $disambiguate_sources, $buildflavor) = @_;
@@ -102,6 +119,7 @@ sub parse {
                           $unique_sources, $disambiguate_sources);
   my $config = Build::read_config($arch, []);
   $config->{'buildflavor'} = $buildflavor if $buildflavor;
+  local $Build::Rpm::includecallback = sub { includecallback($fn, @_) };
   my $descr = Build::Rpm::parse($config, $spec);
   die("unable to parse specfile: $fn\n") unless $descr;
   my @skeys = sort keys(%$descr);
