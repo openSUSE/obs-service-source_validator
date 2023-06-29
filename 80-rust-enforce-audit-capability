@@ -36,7 +36,10 @@ VERBOSE = os.getenv('DEBUG') is not None
 IGNORE_PACKAGES = [
     # the advisory db depends on cargo, and thus rust as it is a subcommand of these. However
     # it has no rust sources itself, so should NOT be subject to the same requirements.
-    "cargo-audit-advisory-db"
+    "cargo-audit-advisory-db",
+    # obs services depend on cargo but do not include rust sources themself and so are exempt
+    "obs-service-cargo_vendor",
+    "obs-service-cargo_audit",
 ]
 
 class Result(Enum):
