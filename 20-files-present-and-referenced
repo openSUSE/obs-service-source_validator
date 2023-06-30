@@ -300,6 +300,7 @@ find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
 	*.orig | \
 	*~ | \
 	.git | \
+	.gitattributes | \
 	.gitignore | \
 	.emacs.backup | \
 	PKGBUILD | \
