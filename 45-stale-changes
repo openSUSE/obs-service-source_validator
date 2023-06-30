@@ -7,7 +7,7 @@ DESTINATIONDIR="$2"
 test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
 HELPERS_DIR="/usr/lib/obs/service/source_validators/helpers"
 $HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
-
+. $HELPERS_DIR/functions
 test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
 
 RETURN=0
@@ -19,16 +19,9 @@ test -f "$DIR_TO_CHECK/_service" && grep -E -q 'name=.product_converter' "$DIR_T
 }
 
 print_specs () {
-for i in "$DIR_TO_CHECK"/*.spec; do
-  [ -e "$i" ] || return
-  # PASS if we have trouble parsing the .spec file
-  if [ -e "$DIR_TO_CHECK/_multibuild" ] && grep -q "@BUILD_FLAVOR@" "$i"; then
-    xmllint -xpath '(/multibuild/flavor | /multibuild/package)/text()' "$DIR_TO_CHECK/_multibuild" | while read flavor; do
-        $HELPERS_DIR/spec_query --specfile "$i" --print-subpacks --buildflavor $flavor | sed -e "s@ .*@@"
-    done
-  fi
-  $HELPERS_DIR/spec_query --specfile "$i" --print-subpacks | sed -e "s@ .*@@"
-done
+while read recipe flavor; do
+  $HELPERS_DIR/spec_query --specfile "${DIR_TO_CHECK}/${recipe}" --print-subpacks --buildflavor "$flavor" | sed -e "s@ .*@@"
+done < <(spec_build_flavors "$DIR_TO_CHECK")
 }
 
 SPECLIST=`print_specs | sort -u`

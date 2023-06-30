@@ -1,0 +1,32 @@
+# Utility functions shared by some validator shell scripts
+
+# Returns a list of build flavors in the form "pkg1.spec\npkg2.spec", "package.spec foo\npackage.spec bar",
+# for easy consumption by a "while read recipe flavor" loop.
+# First argument is the source directory.
+spec_build_flavors() {
+	pushd "$1" >/dev/null
+	if ! [ -e "_multibuild" ]; then
+		for i in *.spec; do
+			echo "$i"
+		done
+	else
+		pkg="$(basename "$PWD")"
+		if [ -e "${pkg}.spec" ]; then
+			echo "${pkg}.spec"
+		fi
+
+		xmllint -xpath '(/multibuild/flavor | /multibuild/package)/text()' _multibuild | while read flavor; do
+			if [ -e "${flavor}.spec" ]; then
+				echo "${flavor}.spec $flavor"
+				continue
+			fi
+
+			specs=(*.spec)
+			if [ "${#specs[@]}" -eq 1 ] && [ -e "${specs[0]}" ]; then
+				# Exactly one .spec file
+				echo "${specs[0]} $flavor"
+			fi
+		done
+	fi
+	popd >/dev/null
+}

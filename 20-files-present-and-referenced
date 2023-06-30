@@ -10,6 +10,7 @@ BASE_DIR=$(dirname $0)
 BASE_DIR=${BASE_DIR:-.}
 HELPERS_DIR="$BASE_DIR/helpers"
 $HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
+. $HELPERS_DIR/functions
 test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && {
 	DESTINATIONDIR="$DIR_TO_CHECK/.osc"
 	OSC_MODE="true"
@@ -53,19 +54,10 @@ case $MY_ARCH in
     ;;
 esac
 
-for i in "$DIR_TO_CHECK"/*.spec ; do
-        test -f "$i" || continue
-        if [ -e "$DIR_TO_CHECK/_multibuild" ] && grep -q "@BUILD_FLAVOR@" "$i"; then
-          sed -n -e 's,.*<\(flavor\|package\)>\([^<]*\)</\(flavor\|package\)>.*,\2,p' \
-              "$DIR_TO_CHECK/_multibuild" | while read flavor; do
-	    $HELPERS_DIR/spec_query --specfile "$i" --print-sources --buildflavor "$flavor"\
-               --no-conditionals --keep-name-conditionals --disambiguate-sources \
-               >> "$TMPDIR/sources" 2>"$TMPDIR/sources.err"
-          done
-        fi
-  	$HELPERS_DIR/spec_query --specfile "$i" --print-sources \
-            --no-conditionals --keep-name-conditionals --disambiguate-sources \
-            >> "$TMPDIR/sources" 2>"$TMPDIR/sources.err"
+while read recipe flavor; do
+	$HELPERS_DIR/spec_query --specfile "${DIR_TO_CHECK}/${recipe}" --print-sources --buildflavor "$flavor" \
+	--no-conditionals --keep-name-conditionals --disambiguate-sources \
+        >> "$TMPDIR/sources" 2>"$TMPDIR/sources.err"
         # ignore expand errors with macro scripts
 	sed -i "/can't expand %(...)/d" "$TMPDIR/sources.err"
 	# ignore macro nesting reported by build script
@@ -75,7 +67,7 @@ for i in "$DIR_TO_CHECK"/*.spec ; do
 	    cat "$TMPDIR/sources.err"
 	    cleanup_and_exit 1
 	fi
-done
+done < <(spec_build_flavors "$DIR_TO_CHECK")
 for i in "$DIR_TO_CHECK"/*.dsc ; do
 	test -f "$i" || continue
 	( sed -ne '/^Files:/,$p' < "$i" | sed -e 1d | sed -e '/^[^ ]/,$d' | while read debchk debsize debfile ; do echo "$debfile" ; done ) >> $TMPDIR/sources
