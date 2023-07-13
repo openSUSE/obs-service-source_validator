@@ -7,7 +7,7 @@ spec_build_flavors() {
 	pushd "$1" >/dev/null
 	if ! [ -e "_multibuild" ]; then
 		for i in *.spec; do
-			echo "$i"
+			[ -e "$i" ] && echo "$i"
 		done
 	else
 		pkg="$(basename "$PWD")"
