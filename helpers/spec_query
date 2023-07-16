@@ -25,6 +25,8 @@ sub prepare_spec {
   my %seen;
   my $dtags;
   my @ifs;
+  my %autonum = (patch => 0, source => 0);
+
   for (my $line = 0; <F>; $line++) {
     # only process if conditionals in non line continuation contexts
     if (/^\s*%(?:define|global).*\\$/) {
@@ -62,10 +64,12 @@ sub prepare_spec {
 
     chomp;
     if (($unique_sources || $disambiguate_sources) &&
-        /^\s*((?:Source|Patch)\d*)\s*:(.*)$/i) {
-      my $tag = lc($1);
+        /^(Source|Patch)(\d*)\s*(\s+[^:]*?)?:\s*(\S+)/i) {
+      my ($tag, $num, $tagextra, $val) = (lc($1), $2, $3, $4);
+      $num = $num ne '' ? 0 + $num : $autonum{$tag};
+      $tag = "$tag$num";
       if ($seen{$tag}) {
-        push @$spec, "$tag: $2";
+        push @$spec, "$tag: $val";
         push @{$dtags->{$tag}}, \$spec->[-1];
         next;
       }
