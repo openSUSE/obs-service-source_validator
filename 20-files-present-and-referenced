@@ -154,7 +154,7 @@ fi
 # Check for empty or ill-formatted patches
 
 for f in $(<$TMPDIR/sources); do
-    if test ! -f "$DIR_TO_CHECK/$file"; then
+    if test ! -f "$DIR_TO_CHECK/$f"; then
         continue
     fi
     case $f in
