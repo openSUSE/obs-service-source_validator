@@ -117,6 +117,20 @@ if [ -x $(type -p xmllint) ]; then
     done
 fi
 
+obscpio_file_list()
+{
+    if ! [ -e "$TMPDIR/obcspio_sources" ]; then
+        touch "$TMPDIR/obcspio_sources"
+        for i in "$DIR_TO_CHECK/"*.obscpio; do
+            if [ -e "$i" ]; then
+                cpio --list --quiet < "$i" >> "$TMPDIR/obcspio_sources"
+            fi
+        done
+    fi
+
+    cat "$TMPDIR/obcspio_sources"
+}
+
 check_tracked()
 {
     local file=${1##*/}
@@ -132,12 +146,18 @@ check_tracked()
         if grep -qsFx "$file" "$DESTINATIONDIR/_to_be_added"; then
             return 0
         fi
+        if obscpio_file_list | grep -qFx "$file"; then
+            return 0
+        fi
         echo "ERROR: $file mentioned in spec file is not tracked."
         return 1
     fi
     if ! test -f "$DIR_TO_CHECK/$file"; then
         if test -f "$DIR_TO_CHECK/${file/\.tar*/}.obscpio"; then
             # assume it will generated on builtime based of the archive
+            return 0
+        fi
+        if obscpio_file_list | grep -qFx "$file"; then
             return 0
         fi
         echo "ERROR: $file mentioned in spec file does not exist."
@@ -154,7 +174,7 @@ fi
 # Check for empty or ill-formatted patches
 
 for f in $(<$TMPDIR/sources); do
-    if test ! -f "$DIR_TO_CHECK/$file"; then
+    if test ! -f "$DIR_TO_CHECK/$f"; then
         continue
     fi
     case $f in
