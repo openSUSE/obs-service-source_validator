@@ -10,7 +10,7 @@ spec_build_flavors() {
 			[ -e "$i" ] && echo "$i"
 		done
 	else
-		pkg="$(basename "$PWD")"
+		pkg="$(basename "$PWD" | cut -d. -f1)"
 		if [ -e "${pkg}.spec" ]; then
 			echo "${pkg}.spec"
 		fi
