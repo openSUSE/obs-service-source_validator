@@ -5,16 +5,11 @@
 # First argument is the source directory.
 spec_build_flavors() {
 	pushd "$1" >/dev/null
-	if ! [ -e "_multibuild" ]; then
-		for i in *.spec; do
-			[ -e "$i" ] && echo "$i"
-		done
-	else
-		pkg="$(basename "$PWD")"
-		if [ -e "${pkg}.spec" ]; then
-			echo "${pkg}.spec"
-		fi
+	for i in *.spec; do
+		[ -e "$i" ] && echo "$i"
+	done
 
+	if [ -e "_multibuild" ]; then
 		xmllint -xpath '(/multibuild/flavor | /multibuild/package)/text()' _multibuild | while read flavor; do
 			if [ -e "${flavor}.spec" ]; then
 				echo "${flavor}.spec $flavor"
