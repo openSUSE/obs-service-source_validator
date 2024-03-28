@@ -92,7 +92,7 @@ def process_spec_file(specpath):
     ])
 
     if rust_packaging:
-        reports.append((name, Result.Warn, "rust-packaging is deprecated - you must convert to cargo-packaging"))
+        reports.append((name, Result.Fail, "rust-packaging is deprecated - you must immediately convert to cargo-packaging"))
 
     if requires_rust:
         # Given the spec path, get the work dir.
@@ -100,26 +100,22 @@ def process_spec_file(specpath):
         workdir = Path(specpath_abs).parent
         service = os.path.join(workdir, "_service")
         if not os.path.exists(service):
-            reports.append((name, Result.Warn, "package depends on rust but does not have obs services configured with cargo_audit or cargo_vendor"))
+            reports.append((name, Result.Warn, "package depends on rust but does not have obs services configured with cargo_vendor"))
             return reports
         # Then process the _service.
-        has_audit = False
         has_vendor = False
-        has_vendor_update = False
+        # Cargo vendor now defaults to true here.
+        has_vendor_update = True
 
         tree = ET.parse(service)
         root_node = tree.getroot()
         for tag in root_node.findall('service'):
-            if tag.attrib['name'] == 'cargo_audit':
-                has_audit = True
             if tag.attrib['name'] == 'cargo_vendor':
                 has_vendor = True
                 for attr in tag:
-                    if attr.attrib['name'] == 'update' and attr.text == 'true':
-                        has_vendor_update = True
+                    if attr.attrib['name'] == 'update' and attr.text != 'true':
+                        has_vendor_update = False
 
-        if not has_audit:
-            reports.append((name, Result.Fail, "package depends on rust but does not have cargo_audit configured. See https://en.opensuse.org/Packaging_Rust_Software"))
         if has_vendor and not has_vendor_update:
             reports.append((name, Result.Warn, "package uses cargo_vendor, but is missing '<param name=\"update\">true</param>' to apply security updates"))
 
