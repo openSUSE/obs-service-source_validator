@@ -91,6 +91,15 @@ for i in `cat $TMPDIR/sources` ; do
 done
 mv $TMPDIR/sources.t $TMPDIR/sources
 
+# validate for encrypted files
+for f in $(<$TMPDIR/sources); do
+    case "$f" in
+      *.zip)
+          unzip -q -P '' -t "$f" || { echo "zip file $f seems encrypted. This makes source review impossible and hence is forbidden."; exit 1;  };
+          ;;
+    esac
+done
+
 # XML validate files starting with _..
 if [ -x $(type -p xmllint) ]; then
     for i in "$DIR_TO_CHECK/_service"; do
