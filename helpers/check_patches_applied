@@ -46,7 +46,7 @@ while (<>) {
 	exit(0);
    }
    if (/^([#\s]*)?%[Pp]atch/ || /^#[Pp]atch/) {
-	my $applied = (/^#/) ? 2 :1;
+	my $applied = (/^[\s]*#/) ? 2 :1;
 	my @line = split (/\s+/,$_);
 	my $had_P = grep {/^-P/} @line;
 	while (@line) {
