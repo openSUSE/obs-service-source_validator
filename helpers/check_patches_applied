@@ -96,7 +96,7 @@ while (<>) {
    }
 }
 
-for my $i (1...$#PATCHES) {
+for my $i (0...$#PATCHES) {
 	next unless $PATCHES[$i];
 	next if $APPLIED[$i] && $APPLIED[$i] == 1;
         if ($APPLIED[$i] && $APPLIED[$i] == 2) {
