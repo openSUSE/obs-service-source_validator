@@ -91,15 +91,6 @@ for i in `cat $TMPDIR/sources` ; do
 done
 mv $TMPDIR/sources.t $TMPDIR/sources
 
-# validate for encrypted files
-for f in $(<$TMPDIR/sources); do
-    case "$f" in
-      *.zip)
-          unzip -q -P '' -t "$f" || { echo "zip file $f seems encrypted. This makes source review impossible and hence is forbidden."; exit 1;  };
-          ;;
-    esac
-done
-
 # XML validate files starting with _..
 if [ -x $(type -p xmllint) ]; then
     for i in "$DIR_TO_CHECK/_service"; do
@@ -180,14 +171,13 @@ if ! test -f "$DIR_TO_CHECK/_service"; then
     done
 fi
 
-# Check for empty or ill-formatted patches
-
 for f in $(<$TMPDIR/sources); do
     if test ! -f "$DIR_TO_CHECK/$f"; then
         continue
     fi
     case $f in
         *.dif|*.diff|*.patch)
+            # Check for empty or ill-formatted patches
             if ! test -s  "$DIR_TO_CHECK/$f"; then
                 echo "ERROR: Patch file $f is zero bytes long, remove empty patch?"
                 RETURN=2
@@ -204,6 +194,13 @@ for f in $(<$TMPDIR/sources); do
                 fi
             fi
             ;;
+      *.zip)
+          # Check for encrypted zip files
+          if ! unzip -qq -P '' -t "$DIR_TO_CHECK/$f"; then
+              echo "ERROR: zip file $f failed to extract, may be corrupted or encrypted. This makes source review impossible and hence is forbidden."
+              RETURN=2
+          fi
+          ;;
     esac
 done
 
