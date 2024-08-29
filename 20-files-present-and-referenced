@@ -12,7 +12,20 @@ HELPERS_DIR="$BASE_DIR/helpers"
 $HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
 . $HELPERS_DIR/functions
 test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && {
-	DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+	OSCLIBVER="$(<.osc/_osclib_version)"
+	case "$OSCLIBVER" in
+	  1.0)
+	    DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+	    DOTOSCDIR="$DIR_TO_CHECK/.osc"
+	    ;;
+	  2.0)
+	    DESTINATIONDIR="$DIR_TO_CHECK/.osc/sources"
+	    DOTOSCDIR="$DIR_TO_CHECK/.osc"
+	    ;;
+	  *)
+	    echo "osclib version $OSCLIBVER not yet supported by source_validator" && exit 2
+	    ;;
+	esac
 	OSC_MODE="true"
 }
 
@@ -136,14 +149,14 @@ check_tracked()
     local file=${1##*/}
 
     if test "$OSC_MODE" = "true" ; then
-        if test -f "$DESTINATIONDIR/$file" && ! grep -qsFx "$file" "$DESTINATIONDIR/_to_be_deleted"; then
+        if test -f "$DESTINATIONDIR/$file" && ! grep -qsFx "$file" "$DOTOSCDIR/_to_be_deleted"; then
             return 0
         fi
         if test -f "$DESTINATIONDIR/${file/\.tar*/}.obscpio"; then
             # assume it will generated on builtime based of the archive
             return 0
         fi
-        if grep -qsFx "$file" "$DESTINATIONDIR/_to_be_added"; then
+        if grep -qsFx "$file" "$DOTOSCDIR/_to_be_added"; then
             return 0
         fi
         if obscpio_file_list | grep -qFx "$file"; then
