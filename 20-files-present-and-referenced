@@ -149,6 +149,12 @@ check_tracked()
     local file=${1##*/}
 
     if test "$OSC_MODE" = "true" ; then
+        if test -x "$(type -p git)" && test -d "$DIR_TO_CHECK/.git"; then
+            if git --git-dir="$DIR_TO_CHECK/.git" ls-files --error-unmatch "$file" > /dev/null; then
+                return 0
+            fi
+            return 1
+        fi
         if test -f "$DESTINATIONDIR/$file" && ! grep -qsFx "$file" "$DOTOSCDIR/_to_be_deleted"; then
             return 0
         fi
