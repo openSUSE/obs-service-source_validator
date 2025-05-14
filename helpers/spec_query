@@ -133,6 +133,12 @@ sub parse {
   return $descr;
 }
 
+sub print_moveassets {
+  my ($descr) = @_;
+  print "@{$descr->{'moveassets'} || []} ";
+  print "\n";
+}
+
 sub print_subpacks {
   my ($descr) = @_;
   print "@{$descr->{'subpacks'} || []} ";
@@ -173,6 +179,7 @@ EOF
 
 my $specfile;
 my $arch = 'noarch';
+my $print_moveassets;
 my $print_subpacks;
 my $print_sources;
 my $no_conditionals;
@@ -193,6 +200,8 @@ while (@ARGV) {
     $buildflavor = shift @ARGV;
   } elsif ($opt eq '--print-subpacks') {
     $print_subpacks = 1;
+  } elsif ($opt eq '--print-moveassets') {
+    $print_moveassets = 1;
   } elsif ($opt eq '--print-sources') {
     $print_sources = 1;
   } elsif ($opt eq '--no-conditionals') {
@@ -214,3 +223,4 @@ my $descr = parse($specfile, $arch, $no_conditionals, $keep_name_conditionals,
                   $unique_sources, $disambiguate_sources, $buildflavor);
 print_subpacks($descr) if $print_subpacks;
 print_sources($descr) if $print_sources;
+print_moveassets($descr) if $print_moveassets;

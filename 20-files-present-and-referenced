@@ -12,20 +12,24 @@ HELPERS_DIR="$BASE_DIR/helpers"
 $HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
 . $HELPERS_DIR/functions
 test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && {
-	OSCLIBVER="$(<.osc/_osclib_version)"
-	case "$OSCLIBVER" in
-	  1.0)
-	    DESTINATIONDIR="$DIR_TO_CHECK/.osc"
-	    DOTOSCDIR="$DIR_TO_CHECK/.osc"
-	    ;;
-	  2.0)
-	    DESTINATIONDIR="$DIR_TO_CHECK/.osc/sources"
-	    DOTOSCDIR="$DIR_TO_CHECK/.osc"
-	    ;;
-	  *)
-	    echo "osclib version $OSCLIBVER not yet supported by source_validator" && exit 2
-	    ;;
-	esac
+	if [ -d "$DIR_TO_CHECK/.git" ]; then
+            DESTINATIONDIR="$DIR_TO_CHECK"
+	else
+            OSCLIBVER="$(<.osc/_osclib_version)"
+            case "$OSCLIBVER" in
+              1.0)
+                DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+                DOTOSCDIR="$DIR_TO_CHECK/.osc"
+                ;;
+              2.0)
+                DESTINATIONDIR="$DIR_TO_CHECK/.osc/sources"
+                DOTOSCDIR="$DIR_TO_CHECK/.osc"
+                ;;
+              *)
+                echo "osclib version $OSCLIBVER not yet supported by source_validator" && exit 2
+                ;;
+            esac
+	fi
 	OSC_MODE="true"
 }
 
@@ -80,6 +84,10 @@ while read recipe flavor; do
 	    cat "$TMPDIR/sources.err"
 	    cleanup_and_exit 1
 	fi
+	$HELPERS_DIR/spec_query --specfile "${DIR_TO_CHECK}/${recipe}" --print-moveassets --buildflavor "$flavor" \
+	--no-conditionals --keep-name-conditionals --disambiguate-sources \
+        | sed 's,^.*/,,' \
+        >> "$TMPDIR/moveassettargets" 2>"$TMPDIR/sources.err"
 done < <(spec_build_flavors "$DIR_TO_CHECK")
 for i in "$DIR_TO_CHECK"/*.dsc ; do
 	test -f "$i" || continue
@@ -132,22 +140,30 @@ fi
 
 obscpio_file_list()
 {
-    if ! [ -e "$TMPDIR/obcspio_sources" ]; then
-        touch "$TMPDIR/obcspio_sources"
+    if ! [ -e "$TMPDIR/obscpio_sources" ]; then
+        touch "$TMPDIR/obscpio_sources"
         for i in "$DIR_TO_CHECK/"*.obscpio; do
             if [ -e "$i" ]; then
-                cpio --list --quiet < "$i" >> "$TMPDIR/obcspio_sources"
+                cpio --list --quiet < "$i" >> "$TMPDIR/obscpio_sources"
+            fi
+        done
+        for i in "$DIR_TO_CHECK/"*; do
+            if [ -d "$i" ]; then
+                echo "${i##*/}" >> "$TMPDIR/obscpio_sources"
             fi
         done
     fi
 
-    cat "$TMPDIR/obcspio_sources"
+    cat "$TMPDIR/obscpio_sources"
 }
 
 check_tracked()
 {
     local file=${1##*/}
-
+    if grep -q "^$file" "$TMPDIR/moveassettargets"; then
+        # it will generated at build time
+        return 0
+    fi
     if test "$OSC_MODE" = "true" ; then
         if test -x "$(type -p git)" && test -d "$DIR_TO_CHECK/.git"; then
             if git --git-dir="$DIR_TO_CHECK/.git" ls-files --error-unmatch "$file" > /dev/null; then
@@ -346,6 +362,7 @@ find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
 	*~ | \
 	.git | \
 	.gitattributes | \
+	.gitmodules | \
 	.gitignore | \
 	.emacs.backup | \
 	PKGBUILD | \
