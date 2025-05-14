@@ -13,6 +13,7 @@ if [ X"$1" = X"" ]; then
     usage 1
 fi
 
+now=`date +%s`
 for CHANGES in "$@" ; do
 
     TROUBLE_FOUND=false
@@ -46,7 +47,6 @@ for CHANGES in "$@" ; do
             done
 			case $DATESTR in
 				\ [MTWFS][a-z][a-z]*)
-				break
 				;;
 				*)
 				echo "ERROR: '$DATESTR' is not a date"
@@ -54,9 +54,9 @@ for CHANGES in "$@" ; do
 				;;
 			esac
             DATE=`date +%s --date "$DATESTR" 2> /dev/null`
-            test $? -gt 0 -o -z "$DATE" -o "$LAST_IS_YEAR" != true && {
+            test $? -gt 0 -o -z "$DATE" -o "$LAST_IS_YEAR" != true -o "$DATE" -gt "$now" && {
                 echo "$CHANGES"
-                echo "ERROR: INVALID \"$DATESTR\" "
+                echo "ERROR: INVALID DATE \"$DATESTR\" "
                 TROUBLE_FOUND=true
             }
           ;;
