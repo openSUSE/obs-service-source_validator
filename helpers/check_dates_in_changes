@@ -18,11 +18,11 @@ for CHANGES in "$@" ; do
 
     TROUBLE_FOUND=false
 
-    while read LINE ; do
+    while IFS=$'\n' read -r LINE; do
         case "$LINE" in
           --------------*)
             # Next line is the changelog entry header
-            read LINE
+            IFS=$'\n' read -r LINE
           ;;
           *)
             continue
