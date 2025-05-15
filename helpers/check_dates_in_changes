@@ -59,7 +59,10 @@ for CHANGES in "$@" ; do
 				TROUBLE_FOUND=true
 				;;
 			esac
-            DATE=`date +%s --date "$DATESTR" 2> /dev/null`
+            if ! DATE=`date +%s --date "$DATESTR"`; then
+                  TROUBLE_FOUND=true
+                  continue
+            fi
             test $? -gt 0 -o -z "$DATE" -o "$LAST_IS_YEAR" != true -o "$DATE" -gt "$now" && {
                 echo "$CHANGES"
                 echo "ERROR: INVALID DATE \"$DATESTR\" "
