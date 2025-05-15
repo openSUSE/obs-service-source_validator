@@ -20,9 +20,15 @@ for CHANGES in "$@" ; do
 
     while read LINE ; do
         case "$LINE" in
-	  removed*) ;;
-	  *@*@*) ;;
-          *-*@*)
+          --------------*)
+            # Next line is the changelog entry header
+            read LINE
+          ;;
+          *)
+            continue
+          ;;
+        esac
+
             DATESTR=""
             LINE=${LINE#\*}
             for i in $LINE ; do
@@ -59,8 +65,6 @@ for CHANGES in "$@" ; do
                 echo "ERROR: INVALID DATE \"$DATESTR\" "
                 TROUBLE_FOUND=true
             }
-          ;;
-        esac
     done < "$CHANGES"
 done
 if test $TROUBLE_FOUND = false ; then
