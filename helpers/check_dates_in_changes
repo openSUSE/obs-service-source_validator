@@ -18,11 +18,14 @@ for CHANGES in "$@" ; do
 
     TROUBLE_FOUND=false
 
-    while read LINE ; do
+    lineno=0
+    while IFS=$'\n' read -r LINE; do
+        ((lineno++))
         case "$LINE" in
           --------------*)
             # Next line is the changelog entry header
-            read LINE
+            IFS=$'\n' read -r LINE
+            ((lineno++))
           ;;
           *)
             continue
@@ -55,17 +58,17 @@ for CHANGES in "$@" ; do
 				\ [MTWFS][a-z][a-z]*)
 				;;
 				*)
-				echo "ERROR: '$DATESTR' is not a date"
+				echo "ERROR: '$DATESTR' is not a date ($CHANGES:$lineno)"
 				TROUBLE_FOUND=true
 				;;
 			esac
             if ! DATE=`date +%s --date "$DATESTR"`; then
-                  TROUBLE_FOUND=true
-                  continue
+                echo "ERROR: INVALID DATE \"$DATESTR\" ($CHANGES:$lineno)"
+                TROUBLE_FOUND=true
+                continue
             fi
             test $? -gt 0 -o -z "$DATE" -o "$LAST_IS_YEAR" != true -o "$DATE" -gt "$now" && {
-                echo "$CHANGES"
-                echo "ERROR: INVALID DATE \"$DATESTR\" "
+                echo "ERROR: INVALID DATE \"$DATESTR\" ($CHANGES:$lineno)"
                 TROUBLE_FOUND=true
             }
     done < "$CHANGES"
