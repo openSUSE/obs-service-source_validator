@@ -384,6 +384,7 @@ find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
 	debian.format | \
 	debian.*.default | \
 	debian.*.dirs | \
+	debian.*.docs | \
 	debian.*.files | \
 	debian.*.init | \
 	debian.*.install | \
