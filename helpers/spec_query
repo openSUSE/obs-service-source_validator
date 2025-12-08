@@ -130,6 +130,11 @@ sub parse {
   $descr->{'sources'} = [map {$descr->{$_}} grep {/^source/} @skeys];
   $descr->{'patches'} = [map {$descr->{$_}} grep {/^patch/} @skeys];
   $descr->{'icons'} = [map {@{$descr->{$_}}} grep {/^icon/} @skeys];
+  for my $file (@{$descr->{'moveassets'} || []}) {
+	  my $basename = $file;
+	  $basename =~ s/.*\///;
+	  $descr->{'sources'} = [grep {$_ ne $basename} @{$descr->{'sources'}}];
+  };
   return $descr;
 }
 
@@ -148,6 +153,7 @@ sub print_subpacks {
 sub print_sources {
   my ($descr) = @_;
   print "@{$descr->{'sources'}} " if @{$descr->{'sources'}};
+  print "@{$descr->{'dirassets'}} " if $descr->{'dirassets'};
   print "@{$descr->{'patches'}} " if @{$descr->{'patches'}};
   print "@{$descr->{'icons'}}" if @{$descr->{'icons'}};
   print "\n";
