@@ -19,12 +19,28 @@ if test ${#keyrings[@]} -gt 1; then
     RETURN=1
 elif test ${#keyrings[@]} -lt 1; then
     # check for missing .keyring files
-    for i in "$DIR_TO_CHECK"/*.sig "$DIR_TO_CHECK"/*.sign "$DIR_TO_CHECK"/*.asc; do
+    for i in "$DIR_TO_CHECK"/*.sig "$DIR_TO_CHECK"/*.sign "$DIR_TO_CHECK"/*.asc "$DIR_TO_CHECK"/*.minisig; do
 	test -f "$i" || continue
 	if test ! -f "${keyrings[0]}"; then
 	    echo "Warning: Need a $(basename -- "$DIR_TO_CHECK").keyring file for validating '$(basename -- $i)'"
 	fi
     done
+elif test -f "$DIR_TO_CHECK"/*.minisig; then
+    # verify minisign signatures
+    MINISIGN="minisign"
+    if ! $MINISIGN -v &> /dev/null; then
+        echo "ERROR: $MINISIGN command not available"
+        RETURN=2
+    else 
+        for i in "$DIR_TO_CHECK"/*.minisig; do
+            test -f "$i" || continue
+            validatefn=${i%.minisig}
+            if ! $MINISIGN -V -q -p "${keyrings[0]}" -x "$i" -m "$validatefn"; then
+                echo "ERROR: signature $i does not validate"
+                RETURN=2
+            fi
+        done
+    fi
 else
     # verify GPG signatures
     GPGTMP=$(mktemp -d)
