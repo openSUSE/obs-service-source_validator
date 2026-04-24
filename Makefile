@@ -37,6 +37,7 @@ test:
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/glibc.spec
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/glibc.spec --buildflavor testsuite
 	./20-files-present-and-referenced t/data/x2d/
+	./t/test_gitignore.sh
 
 
 .PHONY: all install package test

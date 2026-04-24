@@ -406,6 +406,13 @@ find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
             # and source services on server side
             [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d "$DIR_TO_CHECK/.old" ] && continue
 
+            # ignore files that are ignored by git
+            if test -x "$(type -p git)" && test -f "$DIR_TO_CHECK/.gitignore"; then
+                if (cd "$DIR_TO_CHECK" && git check-ignore -q --no-index "$BASE"); then
+                    continue
+                fi
+            fi
+
             warn_on_unmentioned_files "$BASE"
 
             if test "$RETURN" != "2" ; then
