@@ -36,6 +36,7 @@ test:
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/cross-aarch64-gcc7.spec
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/glibc.spec
 	./helpers/spec_query --no-conditionals --keep-name-conditionals --disambiguate-sources --specfile t/data/glibc.spec --buildflavor testsuite
+	./30-patches-applied t/data/declarative/
 	./20-files-present-and-referenced t/data/x2d/
 	./t/test_gitignore.sh
 
