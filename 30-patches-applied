@@ -7,7 +7,9 @@ DIR_TO_CHECK="$1"
 DESTINATIONDIR="$2"
 
 test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
-HELPERS_DIR="/usr/lib/obs/service/source_validators/helpers"
+BASE_DIR=$(dirname $0)
+BASE_DIR=${BASE_DIR:-.}
+HELPERS_DIR="$BASE_DIR/helpers"
 $HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
 
 test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
@@ -19,7 +21,7 @@ for i in "$DIR_TO_CHECK"/*.spec ; do
     test "$VERBOSE" = true && echo -n "."
     RETURN=0
     # WARNING only at the moment, just complain loudly ...
-    /usr/lib/obs/service/source_validators/helpers/check_patches_applied $BATCHMODE "$i" || RETURN=1
+    $HELPERS_DIR/check_patches_applied $BATCHMODE "$i" || RETURN=1
 done
 test "$VERBOSE" = true && echo "done"
 
