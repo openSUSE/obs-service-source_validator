@@ -165,16 +165,6 @@ check_tracked()
         return 0
     fi
     if test "$OSC_MODE" = "true" ; then
-        if test -x "$(type -p git)" && test -d "$DIR_TO_CHECK/.git"; then
-            if git --git-dir="$DIR_TO_CHECK/.git" check-ignore -q "$file"; then
-                # temporary data, marked intentionally by the packager
-                return 0
-            fi
-            if git --git-dir="$DIR_TO_CHECK/.git" ls-files --error-unmatch "$file" > /dev/null; then
-                return 0
-            fi
-            return 1
-        fi
         if test -f "$DESTINATIONDIR/$file" && ! grep -qsFx "$file" "$DOTOSCDIR/_to_be_deleted"; then
             return 0
         fi
@@ -191,6 +181,19 @@ check_tracked()
         echo "ERROR: $file mentioned in spec file is not tracked."
         return 1
     fi
+
+    # working in local clone. osc may or may be not used.
+    if test -x "$(type -p git)" && test -d "$DIR_TO_CHECK/.git" && test -e "$DIR_TO_CHECK/$file"; then
+        if git --git-dir="$DIR_TO_CHECK/.git" check-ignore -q "$file"; then
+            # temporary data, marked intentionally by the packager
+            return 0
+        fi
+        if git --git-dir="$DIR_TO_CHECK/.git" ls-files --error-unmatch "$file" > /dev/null; then
+            return 0
+        fi
+        return 1
+    fi
+
     if ! test -f "$DIR_TO_CHECK/$file"; then
         if test -f "$DIR_TO_CHECK/${file/\.tar*/}.obscpio"; then
             # assume it will generated on builtime based of the archive
