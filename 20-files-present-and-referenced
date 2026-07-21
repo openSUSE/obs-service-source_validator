@@ -49,10 +49,13 @@ cleanup_and_exit () {
 # display a warning if the file is not in the spec file sources
 #
 warn_on_unmentioned_files () {
-  grep -q -F -a -x -- $1 $TMPDIR/sources || echo "(W) Attention, \"$1\" is not mentioned in spec files as source or patch."
+  grep -q -F -a -x -- $1 $TMPDIR/sources || \
+  grep -q -F -a -x -- $1 $TMPDIR/dirassets || \
+  grep -q -E -- "/$1$" $TMPDIR/moveassets || \
+  echo "(W) Attention, \"$1\" is not mentioned in spec files as source or patch."
 }
 
-test "$VERBOSE" = true && echo -n "- checking if needed files are present and none stale "
+test "$VERBOSE" = true && echo "- checking if needed files are present and none stale "
 #
 # first make my TMPDIR
 #
@@ -84,10 +87,12 @@ while read recipe flavor; do
 	    cat "$TMPDIR/sources.err"
 	    cleanup_and_exit 1
 	fi
+	$HELPERS_DIR/spec_query --specfile "${DIR_TO_CHECK}/${recipe}" --print-dirassets --buildflavor "$flavor" \
+	--no-conditionals --keep-name-conditionals --disambiguate-sources \
+        >> "$TMPDIR/dirassets" 2>"$TMPDIR/sources.err"
 	$HELPERS_DIR/spec_query --specfile "${DIR_TO_CHECK}/${recipe}" --print-moveassets --buildflavor "$flavor" \
 	--no-conditionals --keep-name-conditionals --disambiguate-sources \
-        | sed 's,^.*/,,' \
-        >> "$TMPDIR/moveassettargets" 2>"$TMPDIR/sources.err"
+        >> "$TMPDIR/moveassets" 2>"$TMPDIR/sources.err"
 done < <(spec_build_flavors "$DIR_TO_CHECK")
 for i in "$DIR_TO_CHECK"/*.dsc ; do
 	test -f "$i" || continue
@@ -105,12 +110,21 @@ test -f $TMPDIR/sources || cleanup_and_exit
 #
 # check if all Sources, patches and the icon are present
 #
-touch $TMPDIR/sources.t
-
-for i in `cat $TMPDIR/sources` ; do
-	echo "${i##*/}" >> $TMPDIR/sources.t
-done
-mv $TMPDIR/sources.t $TMPDIR/sources
+unify_sources()
+{
+    local file=${1}
+    touch $TMPDIR/${file}.t
+    for i in `cat $TMPDIR/${file}` ; do
+    	echo "${i}" >> $TMPDIR/${file}.t
+    done
+    sort $TMPDIR/${file}.t | uniq > $TMPDIR/${file}
+    rm $TMPDIR/${file}.t
+}
+sed -i -e 's,.*/,,' $TMPDIR/sources
+unify_sources "sources"
+sed -i -e 's,.*/,,' $TMPDIR/dirassets
+unify_sources "dirassets"
+unify_sources "moveassets"
 
 # XML validate files starting with _..
 if [ -x $(type -p xmllint) ]; then
@@ -160,17 +174,8 @@ obscpio_file_list()
 check_tracked()
 {
     local file=${1##*/}
-    if grep -q "^$file" "$TMPDIR/moveassettargets"; then
-        # it will generated at build time
-        return 0
-    fi
+    local silent=${2}
     if test "$OSC_MODE" = "true" ; then
-        if test -x "$(type -p git)" && test -d "$DIR_TO_CHECK/.git"; then
-            if git --git-dir="$DIR_TO_CHECK/.git" ls-files --error-unmatch "$file" > /dev/null; then
-                return 0
-            fi
-            return 1
-        fi
         if test -f "$DESTINATIONDIR/$file" && ! grep -qsFx "$file" "$DOTOSCDIR/_to_be_deleted"; then
             return 0
         fi
@@ -184,9 +189,22 @@ check_tracked()
         if obscpio_file_list | grep -qFx "$file"; then
             return 0
         fi
-        echo "ERROR: $file mentioned in spec file is not tracked."
+        [ -n "$silent" ] || echo "ERROR: $file mentioned in spec file is not tracked."
         return 1
     fi
+
+    # working in local clone. osc may or may be not used.
+    if test -x "$(type -p git)" && test -d "$DIR_TO_CHECK/.git" && test -e "$DIR_TO_CHECK/$file"; then
+        if git --git-dir="$DIR_TO_CHECK/.git" check-ignore -q "$file"; then
+            # temporary data, marked intentionally by the packager, handle it as untracked
+            return 1
+        fi
+        if git --git-dir="$DIR_TO_CHECK/.git" ls-files --error-unmatch "$file" > /dev/null; then
+            return 0
+        fi
+        return 1
+    fi
+
     if ! test -f "$DIR_TO_CHECK/$file"; then
         if test -f "$DIR_TO_CHECK/${file/\.tar*/}.obscpio"; then
             # assume it will generated on builtime based of the archive
@@ -195,16 +213,27 @@ check_tracked()
         if obscpio_file_list | grep -qFx "$file"; then
             return 0
         fi
-        echo "ERROR: $file mentioned in spec file does not exist."
+        [ -n "$silent" ] || echo "ERROR: $file mentioned in spec file does not exist."
         return 1
     fi
 }
 
+# normal source files
 if ! test -f "$DIR_TO_CHECK/_service"; then
     for HASTOBETHERE in $(<$TMPDIR/sources); do
         check_tracked "$HASTOBETHERE" || RETURN=2
     done
 fi
+
+# current policy is that a remote asset needs to be committed as part of the git.
+# So either a directory or an archive.
+for m in $(<$TMPDIR/moveassets); do
+	check_tracked "${m##*/}" silent && continue
+	check_tracked "${m%/*}" silent && continue
+	echo "ERROR: Current policy is to submit some part of a remote asset."
+	echo "       Either archive ${m##*/} or directory ${m%/*}."
+	RETURN=2
+done
 
 for f in $(<$TMPDIR/sources); do
     if test ! -f "$DIR_TO_CHECK/$f"; then
@@ -244,6 +273,7 @@ done
 #
 find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
     BASE=${i##*/}
+    git check-ignore -q "$BASE" && continue
     # files to display first
     case "$BASE" in
 	config-dist.sh | \
@@ -338,6 +368,8 @@ find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
 	*.spec.in | \
 	*.changes.in | \
 	*.test | \
+	AGENTS.md | \
+	tool-scripts | \
 	MD5SUMS | \
 	MD5SUMS.meta | \
 	Makefile | \
@@ -401,8 +433,8 @@ find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
             grep -q -F -a -x -- "$BASE" $TMPDIR/sources && continue
             test -f "$DIR_TO_CHECK/_service" && grep -E -q 'mode=.remoterun' "$DIR_TO_CHECK/_service" && continue
             test -f "$DIR_TO_CHECK/_service" && grep -E -q 'name=.product_converter' "$DIR_TO_CHECK/_service" && continue
-            # be a bit more relaxed for osc, it won't upload directories anyway
-            [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d  "$DIR_TO_CHECK/.osc" ] && continue
+            # be a bit more relaxed for legacy OBS sources, osc won't upload directories anyway
+            [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d  "$DIR_TO_CHECK/.osc" ] && [ ! -e "$DIR_TO_CHECK/.git" ] && continue
             # and source services on server side
             [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d "$DIR_TO_CHECK/.old" ] && continue
 
@@ -411,6 +443,15 @@ find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
                 if (cd "$DIR_TO_CHECK" && git check-ignore -q --no-index "$BASE"); then
                     continue
                 fi
+            fi
+
+	    # Check if either directory or resulting archive is committed according to current factory policy
+            if grep -q -F -a -x -- "$BASE" "$TMPDIR/dirassets" && check_tracked "$BASE"; then
+		# we should maybe also check if the createarchive directive is set? 
+                continue
+            fi
+            if grep -q -E -- "/$BASE$" "$TMPDIR/moveassets" && check_tracked "$BASE"; then
+                continue
             fi
 
             warn_on_unmentioned_files "$BASE"
