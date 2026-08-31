@@ -400,35 +400,7 @@ find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
 	.emacs.backup | \
 	PKGBUILD | \
 	appimage.yml | \
-	debian.changelog | \
-	debian.compat | \
-	debian.control | \
-	debian.copyright | \
-	debian.lintian-overrides | \
-	debian.manpages | \
-	debian.postinst | \
-	debian.postrm | \
-	debian.preinst | \
-	debian.prerm | \
-	debian.rules | \
-	debian.series | \
-	debian.tar.gz | \
-	debian.triggers | \
-	debian.format | \
-	debian.*.default | \
-	debian.*.dirs | \
-	debian.*.docs | \
-	debian.*.files | \
-	debian.*.init | \
-	debian.*.install | \
-	debian.*.logrotate | \
-	debian.*.manpages | \
-	debian.*.postinst | \
-	debian.*.postrm | \
-	debian.*.preinst | \
-	debian.*.prerm | \
-	debian.*.triggers | \
-	debian.*.lintian-overrides )
+	debian.*)
 	    ;;
 	*)
             grep -q -F -a -x -- "$BASE" $TMPDIR/sources && continue
