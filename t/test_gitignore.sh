@@ -10,6 +10,7 @@ TEST_DATA_DIR="t/data/gitignore_test"
 # Create test data directory if it doesn't exist
 mkdir -p "$TEST_DATA_DIR"
 trap 'rm -rf "$TEST_DATA_DIR"' EXIT
+git -C "$TEST_DATA_DIR" init -q
 
 # Create a dummy spec file
 cat > "$TEST_DATA_DIR/test.spec" <<EOF
