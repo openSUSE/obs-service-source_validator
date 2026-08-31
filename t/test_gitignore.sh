@@ -30,6 +30,7 @@ test
 EOF
 
 touch "$TEST_DATA_DIR/test.tar.gz"
+git -C "$TEST_DATA_DIR" add test.tar.gz
 
 # Create a .gitignore and an ignored file
 echo "ignored.txt" > "$TEST_DATA_DIR/.gitignore"
