@@ -20,8 +20,8 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get install -y curl
-        curl -fsSL https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_22.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/opensuse_tools.gpg > /dev/null
-        sudo add-apt-repository 'deb https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_22.04/ /'
+        curl -fsSL https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_26.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/opensuse_tools.gpg > /dev/null
+        sudo add-apt-repository 'deb https://download.opensuse.org/repositories/openSUSE:/Tools/xUbuntu_26.04/ /'
         sudo apt-get install -y obs-build
 
     - name: Run tests
