@@ -39,6 +39,7 @@ test:
 	./30-patches-applied t/data/declarative/
 	./20-files-present-and-referenced t/data/x2d/
 	./t/test_gitignore.sh
+	./t/test_remoteasset.sh
 
 
 .PHONY: all install package test
