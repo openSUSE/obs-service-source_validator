@@ -129,10 +129,8 @@ unify_sources "moveassets"
 # XML validate files starting with _..
 if [ -x "$(type -p xmllint)" ]; then
     if test -f "$DIR_TO_CHECK/_service"; then
-        BASE="${i##*/}"
-
         if ! xmllint --format "$DIR_TO_CHECK/_service" >/dev/null ; then
-            echo "ERROR: $BASE is not valid XML"
+            echo "ERROR: _service is not valid XML"
             RETURN=2
         else
             xmllint --format "$DIR_TO_CHECK/_service" > $TMPDIR/_service
