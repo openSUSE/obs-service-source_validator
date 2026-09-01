@@ -112,18 +112,16 @@ test -f $TMPDIR/sources || cleanup_and_exit
 #
 unify_sources()
 {
-    local file=${1}
-    touch $TMPDIR/${file}.t
-    for i in `cat $TMPDIR/${file}` ; do
-    	echo "${i}" >> $TMPDIR/${file}.t
+    touch "$TMPDIR/sources.t"
+    for f in sources "$@" ; do
+        for i in $(< $TMPDIR/"$f") ; do
+            echo "${i##*/}" >> "$TMPDIR/sources.t"
+        done
     done
-    sort -u $TMPDIR/${file}.t > $TMPDIR/${file}
-    rm $TMPDIR/${file}.t
+    sort -u "$TMPDIR/sources.t" > "$TMPDIR/sources"
+    rm "$TMPDIR/sources.t"
 }
-sed -i -e 's,.*/,,' $TMPDIR/sources
-unify_sources "sources"
 sed -i -e 's,.*/,,' $TMPDIR/dirassets
-unify_sources "dirassets"
 unify_sources "moveassets"
 
 # XML validate files starting with _..
