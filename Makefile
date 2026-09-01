@@ -41,6 +41,7 @@ test:
 	./20-files-present-and-referenced t/data/x2d/
 	./t/test_gitignore.sh
 	./t/test_remoteasset.sh
+	./t/test_files_referenced.sh
 
 
 .PHONY: all install package test

@@ -67,10 +67,11 @@ for CHANGES in "$@" ; do
                 TROUBLE_FOUND=true
                 continue
             fi
-            test $? -gt 0 -o -z "$DATE" -o "$LAST_IS_YEAR" != true -o "$DATE" -gt "$now" && {
+            STATUS=$?
+            if test "$STATUS" -gt 0 || test -z "$DATE" || test "$LAST_IS_YEAR" != true || test "$DATE" -gt "$now"; then
                 echo "ERROR: INVALID DATE \"$DATESTR\" ($CHANGES:$lineno)"
                 TROUBLE_FOUND=true
-            }
+            fi
     done < "$CHANGES"
 done
 if test $TROUBLE_FOUND = false ; then
