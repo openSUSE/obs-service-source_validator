@@ -131,15 +131,11 @@ if [ -x "$(type -p xmllint)" ]; then
     if test -f "$DIR_TO_CHECK/_service"; then
         BASE="${i##*/}"
 
-        xmllint --format "$i" >/dev/null || {
-            echo "ERROR: $(basename -- $i) is not valid XML"
+        if ! xmllint --format "$DIR_TO_CHECK/_service" >/dev/null ; then
+            echo "ERROR: $BASE is not valid XML"
             RETURN=2
-            continue
-        }
-
-        # Check if _service is sane
-        if [ "$BASE" = "_service" ]; then
-            xmllint --format "$i" > $TMPDIR/_service
+        else
+            xmllint --format "$DIR_TO_CHECK/_service" > $TMPDIR/_service
 
             if grep -E -q "service .*mode=." $TMPDIR/_service \
                     && ! grep -E -q "service .*mode=.(disabled|manual|buildtime|localonly)" \
