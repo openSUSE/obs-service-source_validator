@@ -8,7 +8,7 @@ test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
 HELPERS_DIR="/usr/lib/obs/service/source_validators/helpers"
 $HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
 
-test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+test -z "$DESTINATIONDIR" && test -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
 
 test "$VERBOSE" = true && echo -n "- checking for sequence in changes files "
 FIRST_CHANGES=""
@@ -21,7 +21,7 @@ for i in "$DIR_TO_CHECK"/*.changes ; do
     fi
     RETURN=0
     test -n "$FIRST_CHANGES" || FIRST_CHANGES=$i
-    if test -n "$FIRST_CHANGES" -a "$FIRST_CHANGES" != "$i" ; then
+    if test -n "$FIRST_CHANGES" && test "$FIRST_CHANGES" != "$i" ; then
         if cmp -s $FIRST_CHANGES "$i" ; then
             continue
         fi

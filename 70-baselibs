@@ -8,7 +8,7 @@ test -n "$DIR_TO_CHECK" || DIR_TO_CHECK=`pwd`
 HELPERS_DIR="/usr/lib/obs/service/source_validators/helpers"
 $HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
 . $HELPERS_DIR/functions
-test -z "$DESTINATIONDIR" -a -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
+test -z "$DESTINATIONDIR" && test -d "$DIR_TO_CHECK/.osc" && DESTINATIONDIR="$DIR_TO_CHECK/.osc"
 
 containsElement () {
   local e
