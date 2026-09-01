@@ -65,7 +65,7 @@ export TMPDIR=$(mktemp -d -t check_if_valid_source_dir-XXXXXX 2>/dev/null || mkt
 #
 # now create list of Sources.
 #
-MY_ARCH=`uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ -e s/arm.*/arm/ -e s/sa110/arm/`
+MY_ARCH=$(uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ -e s/arm.*/arm/ -e s/sa110/arm/)
 case $MY_ARCH in
   i386)
     MY_ARCH="%ix86"
