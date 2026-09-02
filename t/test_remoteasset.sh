@@ -36,7 +36,7 @@ EOF
 touch "$TEST_DATA_DIR/llama.cpp-main.tar.xz"
 
 # additional sources not needed for re-building the source rpm
-touch "$TEST_DATA_DIR/build.obscpio"
+touch "$TEST_DATA_DIR/build.obscpio" "$TEST_DATA_DIR/AGENTS.md"
 
 echo "Running validator on $TEST_DATA_DIR..."
 ./20-files-present-and-referenced --batchmode "$TEST_DATA_DIR" || exit 1

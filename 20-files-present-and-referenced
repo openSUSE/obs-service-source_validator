@@ -372,6 +372,7 @@ find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
 	MD5SUMS | \
 	MD5SUMS.meta | \
 	Makefile | \
+	AGENTS.md | \
 	README.autobuild | \
 	bigpack | \
 	prepare-build.sh | \
