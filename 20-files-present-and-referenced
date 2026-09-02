@@ -163,6 +163,16 @@ obscpio_file_list()
     cat "$TMPDIR/obscpio_sources"
 }
 
+safe_git() {
+    local target_dir="$1"
+    shift
+
+    env GIT_CONFIG_NOSYSTEM=1 GIT_ADVICE=0 \
+        git -c core.hooksPath=/dev/null -c safe.bareRepository=explicit \
+        --git-dir="$target_dir/.git" --work-tree="$target_dir" \
+        "$@"
+}
+
 check_tracked()
 {
     local file=${1##*/}
@@ -186,12 +196,12 @@ check_tracked()
     fi
 
     # working in local clone. osc may or may be not used.
-    if test -x "$(type -p git)" && test -d "$DIR_TO_CHECK/.git" && test -e "$DIR_TO_CHECK/$file"; then
-        if git --git-dir="$DIR_TO_CHECK/.git" check-ignore -q "$file"; then
+    if test -x "$(type -p git)" && test -d "$DIR_TO_CHECK/.git" && test -f "$DIR_TO_CHECK/.git/config" && test -f "$DIR_TO_CHECK/$file"; then
+        if safe_git "$DIR_TO_CHECK" check-ignore -q "$file"; then
             # temporary data, marked intentionally by the packager, handle it as untracked
             return 1
         fi
-        if git --git-dir="$DIR_TO_CHECK/.git" ls-files --error-unmatch "$file" > /dev/null; then
+        if safe_git "$DIR_TO_CHECK" ls-files --error-unmatch "$file" > /dev/null; then
             return 0
         fi
         return 1
@@ -400,9 +410,9 @@ find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
             # and source services on server side
             [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d "$DIR_TO_CHECK/.old" ] && continue
 
-            # ignore files that are ignored by git
-            if test -x "$(type -p git)" && test -f "$DIR_TO_CHECK/.gitignore"; then
-                if (cd "$DIR_TO_CHECK" && git check-ignore -q --no-index "$BASE"); then
+            # ignore files that are ignored by "it
+            if test -x "$(type -p git)" && test -d "$DIR_TO_CHECK/.git" && test -f "$DIR_TO_CHECK/.gitignore"; then
+                if safe_git "$DIR_TO_CHECK" check-ignore -q "$BASE"; then
                     continue
                 fi
             fi
