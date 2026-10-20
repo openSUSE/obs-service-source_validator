@@ -13,7 +13,7 @@ $HELPERS_DIR/check_input_filename "$DIR_TO_CHECK" || exit 1
 . $HELPERS_DIR/functions
 
 test -z "$DESTINATIONDIR" && test -d "$DIR_TO_CHECK/.osc" && {
-    if [ -d "$DIR_TO_CHECK/.git" ]; then
+    if [ -e "$DIR_TO_CHECK/.git" ]; then
         # osc has used git to clone the package source.
         DESTINATIONDIR="$DIR_TO_CHECK"
     else
@@ -174,6 +174,15 @@ safe_git() {
         "$@"
 }
 
+# Submodules and linked worktrees have a .git file, not a directory.
+# Ask Git to validate the checkout without requiring a local config file.
+GIT_CHECKOUT=false
+if command -v git >/dev/null 2>&1 && [ -e "$DIR_TO_CHECK/.git" ]; then
+    if safe_git "$DIR_TO_CHECK" rev-parse --git-dir >/dev/null 2>&1; then
+        GIT_CHECKOUT=true
+    fi
+fi
+
 check_tracked()
 {
     local file=${1##*/}
@@ -197,7 +206,7 @@ check_tracked()
     fi
 
     # working in local clone. osc may or may be not used.
-    if test -x "$(type -p git)" && test -d "$DIR_TO_CHECK/.git" && test -f "$DIR_TO_CHECK/.git/config" && test -f "$DIR_TO_CHECK/$file"; then
+    if "$GIT_CHECKOUT" && test -f "$DIR_TO_CHECK/$file"; then
         if safe_git "$DIR_TO_CHECK" check-ignore -q "$file"; then
             # temporary data, marked intentionally by the packager, handle it as untracked
             return 1
@@ -418,8 +427,8 @@ find "$DIR_TO_CHECK" -mindepth 1 -maxdepth 1 | while read -s -r i; do
             # and source services on server side
             [ -d "$DIR_TO_CHECK/$BASE" ] && [ -d "$DIR_TO_CHECK/.old" ] && continue
 
-            # ignore files that are ignored by "it
-            if test -x "$(type -p git)" && test -d "$DIR_TO_CHECK/.git" && test -f "$DIR_TO_CHECK/.gitignore"; then
+            # Git also reads info/exclude and configured global ignore rules.
+            if "$GIT_CHECKOUT"; then
                 if safe_git "$DIR_TO_CHECK" check-ignore -q "$BASE"; then
                     continue
                 fi
